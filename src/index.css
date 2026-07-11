@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 8%;
+    --foreground: 40 33% 98%;
+    
+    --card: 222 47% 11%;
+    --card-foreground: 40 33% 98%;
+    
+    --popover: 222 47% 11%;
+    --popover-foreground: 40 33% 98%;
+    
+    --primary: 43 65% 52%;
+    --primary-foreground: 222 47% 8%;
+    
+    --secondary: 222 30% 18%;
+    --secondary-foreground: 40 33% 98%;
+    
+    --muted: 222 30% 18%;
+    --muted-foreground: 222 10% 65%;
+    
+    --accent: 43 65% 52%;
+    --accent-foreground: 222 47% 8%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 222 30% 18%;
+    --input: 222 30% 18%;
+    --ring: 43 65% 52%;
+    
+    --radius: 0.75rem;
+  }
+ 
+  .dark {
+    /* Same as root for dark-by-default feel */
+    --background: 222 47% 8%;
+    --foreground: 40 33% 98%;
+    
+    --card: 222 47% 11%;
+    --card-foreground: 40 33% 98%;
+    
+    --popover: 222 47% 11%;
+    --popover-foreground: 40 33% 98%;
+    
+    --primary: 43 65% 52%;
+    --primary-foreground: 222 47% 8%;
+    
+    --secondary: 222 30% 18%;
+    --secondary-foreground: 40 33% 98%;
+    
+    --muted: 222 30% 18%;
+    --muted-foreground: 222 10% 65%;
+    
+    --accent: 43 65% 52%;
+    --accent-foreground: 222 47% 8%;
+    
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 40 33% 98%;
+    
+    --border: 222 30% 18%;
+    --input: 222 30% 18%;
+    --ring: 43 65% 52%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased selection:bg-primary/30;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif tracking-tight;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-sm dark:bg-black/50 dark:border-white/10;
+  }
+  .luxury-shadow {
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.05);
+  }
+}
