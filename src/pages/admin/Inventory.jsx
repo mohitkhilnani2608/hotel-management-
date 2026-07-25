@@ -19,9 +19,6 @@ export const Inventory = () => {
           <h1 className="text-3xl font-serif font-medium tracking-tight mb-2">Inventory Management</h1>
           <p className="text-muted-foreground">Monitor stock levels, set alerts, and manage supplier orders.</p>
         </div>
-        <Button>
-          Place Order
-        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -79,8 +76,7 @@ export const Inventory = () => {
                   <th className="px-6 py-4 font-medium tracking-wider">Category</th>
                   <th className="px-6 py-4 font-medium tracking-wider">Current Stock</th>
                   <th className="px-6 py-4 font-medium tracking-wider">Status</th>
-                  <th className="px-6 py-4 font-medium tracking-wider">Last Restocked</th>
-                  <th className="px-6 py-4 rounded-tr-lg text-right font-medium tracking-wider">Action</th>
+                  <th className="px-6 py-4 rounded-tr-lg font-medium tracking-wider">Last Restocked</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -101,11 +97,6 @@ export const Inventory = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">{item.lastRestocked}</td>
-                    <td className="px-6 py-4 text-right">
-                      <Button variant="outline" size="sm" className="h-8 text-xs">
-                        Order
-                      </Button>
-                    </td>
                   </tr>
                 ))}
               </tbody>

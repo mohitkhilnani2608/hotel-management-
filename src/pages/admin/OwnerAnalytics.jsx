@@ -5,29 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { useRestaurant } from '../../context/RestaurantContext';
 
 export const OwnerAnalytics = () => {
-  const { monthlyRevenueData, topSellingItems } = useRestaurant();
+  const { monthlyRevenueData, topSellingItems, analytics } = useRestaurant();
 
-  // Derived metrics from latest month (June)
-  const currentMonth = monthlyRevenueData[monthlyRevenueData.length - 1];
-  const previousMonth = monthlyRevenueData[monthlyRevenueData.length - 2];
-
-  const calculateGrowth = (current, previous) => {
-    return ((current - previous) / previous * 100).toFixed(1);
-  };
-
-  const revenueGrowth = calculateGrowth(currentMonth.revenue, previousMonth.revenue);
-  const profitGrowth = calculateGrowth(currentMonth.profit, previousMonth.profit);
+  // We use the dynamic analytics for the top cards now
+  const aov = analytics.orderCount > 0 ? analytics.totalRevenue / analytics.orderCount : 0;
   
-  // Calculate average order value (mock total covers for month = 2100)
-  const monthlyCovers = 2100;
-  const aov = currentMonth.revenue / monthlyCovers;
-  
-  // Expenses breakdown for pie chart
+  // Expenses breakdown for pie chart based on dynamic revenue (mock proportions)
   const expensesData = [
-    { name: 'Food Cost', value: currentMonth.foodCost, fill: 'hsl(var(--primary) / 0.8)' },
-    { name: 'Labor Cost', value: currentMonth.laborCost, fill: 'hsl(var(--primary) / 0.5)' },
-    { name: 'Overhead & Other', value: currentMonth.revenue - currentMonth.profit - currentMonth.foodCost - currentMonth.laborCost, fill: 'hsl(var(--muted-foreground) / 0.3)' },
-    { name: 'Net Profit', value: currentMonth.profit, fill: 'hsl(var(--primary))' },
+    { name: 'Food Cost', value: analytics.totalRevenue * 0.28, fill: 'hsl(var(--primary) / 0.8)' },
+    { name: 'Labor Cost', value: analytics.totalRevenue * 0.32, fill: 'hsl(var(--primary) / 0.5)' },
+    { name: 'Overhead & Other', value: analytics.totalRevenue * 0.1, fill: 'hsl(var(--muted-foreground) / 0.3)' },
+    { name: 'Net Profit', value: analytics.netProfit, fill: 'hsl(var(--primary))' },
   ];
 
   return (
@@ -40,41 +28,35 @@ export const OwnerAnalytics = () => {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${currentMonth.revenue.toLocaleString()}</div>
-            <p className={`text-xs mt-1 flex items-center ${revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {revenueGrowth >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-              {revenueGrowth > 0 ? '+' : ''}{revenueGrowth}% from last month
-            </p>
+            <div className="text-2xl font-bold">${(analytics.totalRevenue || 0).toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">Overall accumulated</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Net Profit Margin</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Net Profit</CardTitle>
             <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{((currentMonth.profit / currentMonth.revenue) * 100).toFixed(1)}%</div>
-            <p className={`text-xs mt-1 flex items-center ${profitGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {profitGrowth >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-              {profitGrowth > 0 ? '+' : ''}{profitGrowth}% net growth
-            </p>
+            <div className="text-2xl font-bold">${(analytics.netProfit || 0).toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">Based on ~30% margin</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Covers</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Orders & Customers</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{monthlyCovers.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{analytics.orderCount} / {analytics.totalCustomers}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Total guests served this month
+              Orders / Registered Customers
             </p>
           </CardContent>
         </Card>
@@ -87,7 +69,7 @@ export const OwnerAnalytics = () => {
           <CardContent>
             <div className="text-2xl font-bold">${aov.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Calculated across all covers
+              Average per order
             </p>
           </CardContent>
         </Card>
@@ -162,7 +144,7 @@ export const OwnerAnalytics = () => {
                 <div key={i} className="flex items-center gap-2 text-sm">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.fill }}></div>
                   <span className="text-muted-foreground flex-1">{item.name}</span>
-                  <span className="font-medium">{((item.value / currentMonth.revenue) * 100).toFixed(0)}%</span>
+                  <span className="font-medium">{analytics.totalRevenue ? ((item.value / analytics.totalRevenue) * 100).toFixed(0) : 0}%</span>
                 </div>
               ))}
             </div>

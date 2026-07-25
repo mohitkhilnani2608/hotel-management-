@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Filter, Leaf } from 'lucide-react';
+import { Filter, Leaf, ShoppingCart } from 'lucide-react';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { CartSidebar } from '../../components/menu/CartSidebar';
 
 export const Menu = () => {
-  const { menuItems } = useRestaurant();
+  const { menuItems, addToCart, cart } = useRestaurant();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showVeganOnly, setShowVeganOnly] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   const categories = ['All', 'Starters', 'Mains', 'Desserts'];
 
@@ -19,8 +21,19 @@ export const Menu = () => {
   });
 
   return (
-    <div className="pt-24 pb-24 min-h-screen bg-muted/10">
+    <div className="pt-24 pb-24 min-h-screen bg-muted/10 relative">
       <div className="container mx-auto px-6 max-w-7xl">
+        <div className="flex justify-end mb-4">
+          <Button variant="outline" className="relative" onClick={() => setIsCartOpen(true)}>
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            Cart
+            {cart.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                {cart.reduce((sum, item) => sum + item.quantity, 0)}
+              </span>
+            )}
+          </Button>
+        </div>
         <div className="mb-12 text-center max-w-2xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-serif mb-4">Our Menu</h1>
           <p className="text-muted-foreground text-lg">
@@ -101,7 +114,16 @@ export const Menu = () => {
                       <span className="font-medium text-lg shrink-0">${item.price}</span>
                     </div>
                     <p className="text-muted-foreground text-sm mb-6 flex-1">{item.description}</p>
-                    {/* For now, just a button, maybe we add cart functionality later if requested */}
+                    <Button 
+                      variant="outline" 
+                      className="w-full" 
+                      onClick={() => {
+                        addToCart(item);
+                        setIsCartOpen(true);
+                      }}
+                    >
+                      Add to Cart
+                    </Button>
                   </div>
                 </motion.div>
               ))}
@@ -122,6 +144,7 @@ export const Menu = () => {
           </div>
         </div>
       </div>
+      <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>
   );
 };

@@ -52,9 +52,6 @@ export const GuestDashboard = () => {
         </div>
         
         <div className="shrink-0 flex gap-2 w-full md:w-auto">
-          {!isPast && (
-            <Button variant="outline" className="w-full" onClick={() => alert('Modification requested. A host will contact you shortly.')}>Modify</Button>
-          )}
         </div>
       </Card>
     );

@@ -1,10 +1,12 @@
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Notebook, ChefHat, Bell, Search, Utensils, LineChart, Package } from 'lucide-react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Users, Notebook, ChefHat, Bell, Search, Utensils, LineChart, Package, LogOut } from 'lucide-react';
 import { Input } from '../ui/Input';
+import { Button } from '../ui/Button';
 
 export const AdminLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -49,14 +51,29 @@ export const AdminLayout = () => {
         </nav>
         
         <div className="p-4 border-t">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-serif text-lg">
-              M
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-serif text-lg">
+                M
+              </div>
+              <div className="text-sm">
+                <p className="font-medium">Manager</p>
+                <p className="text-muted-foreground text-xs">admin@auradine.com</p>
+              </div>
             </div>
-            <div className="text-sm">
-              <p className="font-medium">Manager</p>
-              <p className="text-muted-foreground text-xs">admin@auradine.com</p>
-            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-muted-foreground hover:text-destructive"
+              onClick={() => {
+                localStorage.removeItem('staffAuth');
+                localStorage.removeItem('ownerAuth');
+                navigate('/');
+              }}
+              title="Log Out"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </aside>

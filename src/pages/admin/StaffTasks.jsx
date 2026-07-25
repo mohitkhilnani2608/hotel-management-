@@ -52,11 +52,6 @@ export const StaffTasks = () => {
                     {order.items.map((item, idx) => <li key={idx}>• {item}</li>)}
                   </ul>
                 </div>
-                <div className="flex gap-2 mt-auto">
-                  <Button size="sm" variant="outline" className="w-full">
-                     Bump Ticket
-                  </Button>
-                </div>
               </div>
             ))}
           </CardContent>

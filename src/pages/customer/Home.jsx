@@ -184,26 +184,7 @@ export const Home = () => {
         </div>
       </section>
 
-      {/* Newsletter Signup */}
-      <section className="py-24 bg-background">
-        <div className="container mx-auto px-6 max-w-4xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <h2 className="text-4xl font-serif mb-6">Join Our Inner Circle</h2>
-            <p className="text-muted-foreground text-lg mb-10 max-w-2xl mx-auto">
-              Subscribe to receive exclusive invitations to private tasting events, seasonal menu previews, and culinary insights from Chef Alexandre.
-            </p>
-            <form className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto" onSubmit={(e) => { e.preventDefault(); alert('Successfully subscribed to the newsletter!'); }}>
-              <Input type="email" placeholder="Enter your email address" className="flex-1 bg-card/50 border-white/10 h-12" required />
-              <Button type="submit" size="lg" className="h-12 px-8">Subscribe</Button>
-            </form>
-          </motion.div>
-        </div>
-      </section>
+      {/* Newsletter Signup Removed as per functionality requirements */}
     </div>
   );
 };

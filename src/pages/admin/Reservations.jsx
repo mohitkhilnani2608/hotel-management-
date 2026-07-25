@@ -9,7 +9,7 @@ import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 
 export const Reservations = () => {
-  const { reservations, tables, updateReservationStatus } = useRestaurant();
+  const { reservations, tables, updateReservationStatus, loungeBookings } = useRestaurant();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
@@ -111,9 +111,6 @@ export const Reservations = () => {
                           Clear
                         </Button>
                       )}
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -128,6 +125,50 @@ export const Reservations = () => {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="mt-12">
+        <div className="mb-6">
+          <h2 className="text-2xl font-serif font-medium tracking-tight mb-2">Lounge Bookings</h2>
+          <p className="text-muted-foreground">Manage private events and lounge area bookings.</p>
+        </div>
+        <div className="bg-card border rounded-xl shadow-sm overflow-hidden flex flex-col">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead>Booking ID</TableHead>
+                <TableHead>Guest Name</TableHead>
+                <TableHead>Guests</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Time</TableHead>
+                <TableHead>Event Details</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loungeBookings.map((booking) => (
+                <TableRow key={booking.id}>
+                  <TableCell className="font-medium font-mono text-xs">{booking.id}</TableCell>
+                  <TableCell>
+                    <div className="font-medium">{booking.guestName}</div>
+                  </TableCell>
+                  <TableCell>{booking.guests}</TableCell>
+                  <TableCell>{format(new Date(booking.date), 'MMM dd, yyyy')}</TableCell>
+                  <TableCell className="font-medium">{booking.time}</TableCell>
+                  <TableCell className="max-w-xs truncate text-muted-foreground">{booking.eventDetails}</TableCell>
+                  <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                </TableRow>
+              ))}
+              {loungeBookings.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                    No lounge bookings found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

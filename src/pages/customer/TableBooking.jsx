@@ -32,7 +32,7 @@ export const TableBooking = () => {
       guestName: `${formData.firstName} ${formData.lastName}`,
       partySize: parseInt(formData.partySize, 10),
       tableId: null, // Host will assign
-      date: new Date(formData.date),
+      date: formData.date,
       time: formData.time,
     });
     setStep(3); // Success step

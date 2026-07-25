@@ -4,31 +4,22 @@ import { Users, CreditCard, Utensils, ArrowUpRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { useRestaurant } from '../../context/RestaurantContext';
 
-const revenueData = [
-  { name: 'Mon', total: 4200 },
-  { name: 'Tue', total: 3100 },
-  { name: 'Wed', total: 4800 },
-  { name: 'Thu', total: 5400 },
-  { name: 'Fri', total: 9200 },
-  { name: 'Sat', total: 11100 },
-  { name: 'Sun', total: 8800 },
-];
-
 export const Dashboard = () => {
-  const { tables, reservations } = useRestaurant();
+  const { tables, reservations, orders, analytics, monthlyRevenueData } = useRestaurant();
 
   const totalTables = tables.length;
   const occupiedTables = tables.filter(t => t.status === 'Seated').length;
-  const occupancyRate = Math.round((occupiedTables / totalTables) * 100);
+  const occupancyRate = totalTables > 0 ? Math.round((occupiedTables / totalTables) * 100) : 0;
 
   const pendingReservations = reservations.filter(r => r.status === 'Confirmed').length;
   
-  // Mock today's covers (total guests seated or expected)
+  // Dynamic covers based on real reservations
   const todayCovers = reservations
     .filter(r => r.status === 'Seated' || r.status === 'Confirmed' || r.status === 'Completed')
     .reduce((acc, curr) => acc + curr.partySize, 0);
 
-  const todayRevenue = todayCovers * 85; // Average spend per head
+  // Dynamic revenue from actual orders analytics
+  const todayRevenue = analytics.totalRevenue || 0;
 
   return (
     <div className="space-y-6">
@@ -100,7 +91,7 @@ export const Dashboard = () => {
           <CardContent className="pl-0">
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <AreaChart data={monthlyRevenueData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
@@ -109,7 +100,7 @@ export const Dashboard = () => {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                   <XAxis 
-                    dataKey="name" 
+                    dataKey="month" 
                     stroke="hsl(var(--muted-foreground))" 
                     fontSize={12} 
                     tickLine={false} 
@@ -126,7 +117,7 @@ export const Dashboard = () => {
                     contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
                     itemStyle={{ color: 'hsl(var(--foreground))' }}
                   />
-                  <Area type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorTotal)" />
+                  <Area type="monotone" name="Revenue" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorTotal)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -135,23 +126,24 @@ export const Dashboard = () => {
         
         <Card className="md:col-span-3">
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle>Recent Orders</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-8">
-              {reservations.slice(0, 5).map((reservation, i) => (
-                <div key={reservation.id} className="flex items-center">
+              {orders.length === 0 && <p className="text-muted-foreground text-sm">No recent orders.</p>}
+              {orders.slice(0, 5).map((order) => (
+                <div key={order.id} className="flex items-center">
                   <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary font-medium text-sm">
-                    {reservation.guestName.charAt(0)}
+                    O
                   </span>
                   <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">{reservation.guestName}</p>
+                    <p className="text-sm font-medium leading-none">Order #{order.id}</p>
                     <p className="text-sm text-muted-foreground">
-                      {reservation.status} • Party of {reservation.partySize}
+                      {order.status} • {order.items?.length || 0} items
                     </p>
                   </div>
                   <div className="ml-auto font-medium text-sm text-muted-foreground">
-                    {reservation.time}
+                    ${order.total.toFixed(2)}
                   </div>
                 </div>
               ))}

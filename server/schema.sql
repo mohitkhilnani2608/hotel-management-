@@ -1,0 +1,50 @@
+CREATE TABLE IF NOT EXISTS Customers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS Orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customerId INTEGER,
+    status TEXT DEFAULT 'Pending',
+    total REAL NOT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (customerId) REFERENCES Customers(id)
+);
+
+CREATE TABLE IF NOT EXISTS OrderItems (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    orderId INTEGER NOT NULL,
+    menuItemId TEXT NOT NULL,
+    name TEXT NOT NULL,
+    price REAL NOT NULL,
+    quantity INTEGER NOT NULL,
+    FOREIGN KEY (orderId) REFERENCES Orders(id)
+);
+
+CREATE TABLE IF NOT EXISTS Reservations (
+    id TEXT PRIMARY KEY,
+    customerId INTEGER,
+    guestName TEXT NOT NULL,
+    partySize INTEGER NOT NULL,
+    tableId TEXT,
+    date TEXT NOT NULL,
+    time TEXT NOT NULL,
+    status TEXT DEFAULT 'Confirmed',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (customerId) REFERENCES Customers(id)
+);
+
+CREATE TABLE IF NOT EXISTS LoungeBookings (
+    id TEXT PRIMARY KEY,
+    guestName TEXT NOT NULL,
+    eventDetails TEXT,
+    guests INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    time TEXT NOT NULL,
+    status TEXT DEFAULT 'Confirmed',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);

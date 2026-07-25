@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { subHours, addDays } from 'date-fns';
 
 const initialTables = [
@@ -59,14 +59,127 @@ const RestaurantContext = createContext();
 export const RestaurantProvider = ({ children }) => {
   const [tables, setTables] = useState(initialTables);
   const [menuItems] = useState(initialMenu);
-  const [reservations, setReservations] = useState(initialReservations);
+  const [reservations, setReservations] = useState([]);
+  const [cart, setCart] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [loungeBookings, setLoungeBookings] = useState([]);
+  const [customer, setCustomer] = useState(null);
+  const [analytics, setAnalytics] = useState({
+    totalRevenue: 0,
+    netProfit: 0,
+    orderCount: 0,
+    reservationCount: 0,
+    loungeCount: 0,
+    totalCustomers: 0
+  });
+
+  const fetchBackendData = async () => {
+    try {
+      const [resReq, loungeReq, ordersReq] = await Promise.all([
+        fetch('/api/reservations'),
+        fetch('/api/lounge-bookings'),
+        fetch('/api/orders')
+      ]);
+      const resAnalytics = await fetch('/api/analytics');
+      const dataAnalytics = await resAnalytics.json();
+      setAnalytics(dataAnalytics);
+
+      if (resReq.ok) setReservations(await resReq.json());
+      if (loungeReq.ok) setLoungeBookings(await loungeReq.json());
+      if (ordersReq.ok) setOrders(await ordersReq.json());
+
+      // Initialize customer from localStorage if exists
+      const storedCustomer = localStorage.getItem('customerData');
+      if (storedCustomer) {
+        setCustomer(JSON.parse(storedCustomer));
+      }
+    } catch (error) {
+      console.error('Error fetching backend data:', error);
+      // Fallback to initial if backend is not running
+      setReservations(initialReservations);
+    }
+  };
+
+  useEffect(() => {
+    fetchBackendData();
+  }, []);
+
+  const addToCart = (item) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.id === item.id);
+      if (existing) {
+        return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
+      }
+      return [...prev, { ...item, quantity: 1 }];
+    });
+  };
+
+  const removeFromCart = (itemId) => {
+    setCart(prev => prev.filter(i => i.id !== itemId));
+  };
+
+  const clearCart = () => setCart([]);
+
+  const placeOrder = async () => {
+    if (cart.length === 0) return;
+    const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          total: cartTotal, 
+          items: cart,
+          customerId: customer?.id || null 
+        })
+      });
+      if (response.ok) {
+        clearCart();
+        fetchBackendData();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  };
 
   const updateTableStatus = (tableId, newStatus) => {
     setTables(tables.map(t => t.id === tableId ? { ...t, status: newStatus } : t));
   };
 
-  const addReservation = (reservation) => {
-    setReservations([...reservations, { ...reservation, id: `R${1000 + reservations.length + 1}`, status: 'Confirmed' }]);
+  const addReservation = async (reservation) => {
+    try {
+      const response = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...reservation,
+          customerId: customer?.id || null
+        })
+      });
+      if (response.ok) {
+        fetchBackendData();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const addLoungeBooking = async (booking) => {
+    try {
+      const response = await fetch('/api/lounge-bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(booking)
+      });
+      if (response.ok) {
+        fetchBackendData();
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const updateReservationStatus = (reservationId, newStatus, tableId = null) => {
@@ -90,16 +203,59 @@ export const RestaurantProvider = ({ children }) => {
     }
   };
 
+  const loginCustomer = async (email, password) => {
+    const res = await fetch('/api/customers/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    setCustomer(data);
+    localStorage.setItem('customerData', JSON.stringify(data));
+  };
+
+  const registerCustomer = async (name, email, password) => {
+    const res = await fetch('/api/customers/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    setCustomer(data);
+    localStorage.setItem('customerData', JSON.stringify(data));
+  };
+
+  const logoutCustomer = () => {
+    setCustomer(null);
+    localStorage.removeItem('customerData');
+  };
+
   return (
     <RestaurantContext.Provider value={{
       tables,
       menuItems,
       reservations,
+      loungeBookings,
+      orders,
+      cart,
+      analytics,
       monthlyRevenueData,
       topSellingItems,
+      customer,
       updateTableStatus,
       addReservation,
-      updateReservationStatus
+      addLoungeBooking,
+      updateReservationStatus,
+      addToCart,
+      removeFromCart,
+      clearCart,
+      placeOrder,
+      fetchBackendData,
+      loginCustomer,
+      registerCustomer,
+      logoutCustomer
     }}>
       {children}
     </RestaurantContext.Provider>

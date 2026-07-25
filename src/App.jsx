@@ -22,6 +22,22 @@ import { StaffTasks } from './pages/admin/StaffTasks';
 import { OwnerAnalytics } from './pages/admin/OwnerAnalytics';
 import { Inventory } from './pages/admin/Inventory';
 
+const ProtectedOwnerRoute = ({ children }) => {
+  const isOwner = localStorage.getItem('ownerAuth') === 'true';
+  if (!isOwner) {
+    return <Navigate to="/admin" replace />;
+  }
+  return children;
+};
+
+const ProtectedStaffRoute = ({ children }) => {
+  const isStaff = localStorage.getItem('staffAuth') === 'true' || localStorage.getItem('ownerAuth') === 'true';
+  if (!isStaff) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+};
+
 function App() {
   return (
     <RestaurantProvider>
@@ -40,12 +56,12 @@ function App() {
           </Route>
 
           {/* Admin Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/admin" element={<ProtectedStaffRoute><AdminLayout /></ProtectedStaffRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="matrix" element={<TableMatrix />} />
             <Route path="reservations" element={<Reservations />} />
             <Route path="tasks" element={<StaffTasks />} />
-            <Route path="analytics" element={<OwnerAnalytics />} />
+            <Route path="analytics" element={<ProtectedOwnerRoute><OwnerAnalytics /></ProtectedOwnerRoute>} />
             <Route path="inventory" element={<Inventory />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Route>
