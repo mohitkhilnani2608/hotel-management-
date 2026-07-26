@@ -8,15 +8,20 @@ export const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const isOwner = localStorage.getItem('ownerAuth') === 'true';
+
   const navItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
-    { name: 'Table Matrix', path: '/admin/matrix', icon: Utensils },
+    { name: 'Table Matrix', path: '/admin/matrix', icon: LayoutDashboard },
+    { name: 'Kitchen & Tasks', path: '/admin/tasks', icon: ChefHat },
     { name: 'Reservations', path: '/admin/reservations', icon: Notebook },
-    { name: 'Staff Tasks', path: '/admin/tasks', icon: ChefHat },
     { name: 'Inventory', path: '/admin/inventory', icon: Package },
-    { name: 'Guests', path: '/admin/guests', icon: Users },
-    { name: 'Analytics & Reports', path: '/admin/analytics', icon: LineChart },
   ];
+
+  if (isOwner) {
+    navItems.push({ name: 'Guests', path: '/admin/guests', icon: Users });
+    navItems.push({ name: 'Analytics & Reports', path: '/admin/analytics', icon: LineChart });
+  }
 
   return (
     <div className="min-h-screen bg-muted/20 flex font-sans text-foreground">
@@ -57,8 +62,8 @@ export const AdminLayout = () => {
                 M
               </div>
               <div className="text-sm">
-                <p className="font-medium">Manager</p>
-                <p className="text-muted-foreground text-xs">admin@auradine.com</p>
+                <p className="font-medium">{isOwner ? 'Owner' : 'Staff'}</p>
+                <p className="text-muted-foreground text-xs">{isOwner ? 'admin@auradine.com' : 'staff@auradine.com'}</p>
               </div>
             </div>
             <Button 

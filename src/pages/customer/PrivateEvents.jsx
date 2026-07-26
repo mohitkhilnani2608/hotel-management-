@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 
 export const PrivateEvents = () => {
-  const { addLoungeBooking } = useRestaurant();
+  const { addLoungeBooking, customer, setAuthModalOpen } = useRestaurant();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -23,6 +23,11 @@ export const PrivateEvents = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!customer) {
+      setAuthModalOpen(true);
+      return;
+    }
+    
     addLoungeBooking({
       guestName: `${formData.firstName} ${formData.lastName}`,
       eventDetails: formData.details,
@@ -113,16 +118,16 @@ export const PrivateEvents = () => {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-sm text-muted-foreground uppercase tracking-wider font-medium">First Name</label>
-                    <Input required name="firstName" value={formData.firstName} onChange={handleChange} placeholder="John" className="bg-background/50 border-white/10" />
+                    <Input required name="firstName" value={formData.firstName || (customer ? customer.name.split(' ')[0] : '')} onChange={handleChange} placeholder="John" className="bg-background/50 border-white/10" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm text-muted-foreground uppercase tracking-wider font-medium">Last Name</label>
-                    <Input required name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Doe" className="bg-background/50 border-white/10" />
+                    <Input required name="lastName" value={formData.lastName || (customer ? customer.name.split(' ').slice(1).join(' ') : '')} onChange={handleChange} placeholder="Doe" className="bg-background/50 border-white/10" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm text-muted-foreground uppercase tracking-wider font-medium">Email Address</label>
-                  <Input required type="email" name="email" value={formData.email} onChange={handleChange} placeholder="john@example.com" className="bg-background/50 border-white/10" />
+                  <Input required type="email" name="email" value={formData.email || (customer?.email || '')} onChange={handleChange} placeholder="john@example.com" className="bg-background/50 border-white/10" />
                 </div>
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">

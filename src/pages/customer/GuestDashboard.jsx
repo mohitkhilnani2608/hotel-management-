@@ -8,15 +8,24 @@ import { Badge } from '../../components/ui/Badge';
 import { Link } from 'react-router-dom';
 
 export const GuestDashboard = () => {
-  const { reservations } = useRestaurant();
+  const { reservations, customer, orders } = useRestaurant();
   
-  // Mock current user
-  const currentUser = { name: 'Eleanor Vance' };
-  
-  const userReservations = reservations.filter(r => r.guestName === currentUser.name);
-  
+  if (!customer) {
+    return (
+      <div className="pt-24 pb-16 min-h-screen bg-muted/10 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-serif">Please log in to view your dashboard</h2>
+          <p className="text-muted-foreground">Access your reservations, dining history, and orders.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const userReservations = reservations.filter(r => r.customerId === customer.id || r.guestName.toLowerCase() === customer.name.toLowerCase());
   const upcomingReservations = userReservations.filter(r => r.status === 'Confirmed' || r.status === 'Seated');
   const pastReservations = userReservations.filter(r => r.status === 'Completed' || r.status === 'Canceled');
+
+  const userOrders = orders.filter(o => o.customerId === customer.id);
 
   const ReservationCard = ({ reservation, isPast }) => {
     return (
@@ -57,20 +66,58 @@ export const GuestDashboard = () => {
     );
   };
 
+  const OrderCard = ({ order }) => {
+    return (
+      <Card className="overflow-hidden p-6 flex flex-col md:flex-row gap-6 items-center shadow-sm hover:shadow-md transition-shadow">
+        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+          <Utensils className="w-6 h-6 text-primary" />
+        </div>
+        <div className="flex-1 flex flex-col md:flex-row justify-between w-full">
+          <div className="space-y-1 mb-4 md:mb-0">
+            <div className="flex items-center gap-3">
+              <h3 className="font-serif text-xl font-medium">Order #{order.id}</h3>
+              <Badge variant={order.status === 'Completed' ? 'success' : order.status === 'Pending' ? 'default' : 'secondary'}>
+                {order.status || 'Pending'}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {order.items?.map(i => `${i.quantity}x ${i.name}`).join(', ') || 'No items'}
+            </p>
+          </div>
+          
+          <div className="flex gap-6 text-sm bg-muted/20 px-4 py-2 rounded-lg">
+             <div>
+              <span className="block text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Date</span>
+              <span className="font-medium flex items-center gap-1">
+                <Calendar className="w-3 h-3 text-primary" /> {order.createdAt ? format(new Date(order.createdAt), 'MMM dd, yyyy') : 'Today'}
+              </span>
+            </div>
+            <div>
+              <span className="block text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Total</span>
+              <span className="font-medium flex items-center gap-1">
+                 ${order.total?.toFixed(2) || '0.00'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  };
+
   return (
     <div className="pt-24 pb-16 min-h-screen bg-muted/10">
       <div className="container mx-auto px-6 max-w-5xl">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-4">
           <div>
-            <h1 className="text-4xl font-serif mb-2">Welcome back, {currentUser.name.split(' ')[0]}</h1>
+            <h1 className="text-4xl font-serif mb-2">Welcome back, {customer.name.split(' ')[0]}</h1>
             <p className="text-muted-foreground">Manage your upcoming reservations and view past dining experiences.</p>
           </div>
           <div className="flex items-center gap-3 bg-card border rounded-full pl-2 pr-4 py-1 shadow-sm">
             <div className="w-10 h-10 bg-primary/20 text-primary rounded-full flex items-center justify-center font-serif text-xl">
-              {currentUser.name.charAt(0)}
+              {customer.name.charAt(0)}
             </div>
             <div className="text-sm">
-              <span className="block font-medium">{currentUser.name}</span>
+              <span className="block font-medium">{customer.name}</span>
               <span className="text-muted-foreground">AuraDine Member</span>
             </div>
           </div>
@@ -103,6 +150,23 @@ export const GuestDashboard = () => {
               </div>
             ) : (
               <p className="text-muted-foreground text-center py-8">No past dining history found.</p>
+            )}
+          </section>
+          <section>
+            <h2 className="text-2xl font-serif mb-6 border-b pb-2">Recent Orders</h2>
+            {userOrders.length > 0 ? (
+              <div className="space-y-4">
+                {userOrders.map(o => <OrderCard key={o.id} order={o} />)}
+              </div>
+            ) : (
+              <div className="text-center py-16 bg-card border border-dashed rounded-xl shadow-sm">
+                <Utensils className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No past orders</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">You haven't placed any food orders yet.</p>
+                <Link to="/menu">
+                  <Button size="lg">View Menu</Button>
+                </Link>
+              </div>
             )}
           </section>
         </div>

@@ -6,17 +6,21 @@ import { Button } from '../../components/ui/Button';
 import { CheckCircle2, Flame, BellRing } from 'lucide-react';
 
 export const StaffTasks = () => {
-  const { tables, updateTableStatus } = useRestaurant();
+  const { tables, updateTableStatus, orders, updateOrderStatus } = useRestaurant();
 
   // Tables that need bussing/cleaning
   const tablesToBus = tables.filter(t => t.status === 'Dirty');
   
-  // Kitchen Orders (Mock data for the pivot)
-  const kitchenOrders = [
-    { id: 'K1', table: 'T2', items: ['2x Wagyu Beef Tartare'], status: 'Cooking', time: '10m ago', priority: 'Normal' },
-    { id: 'K2', table: 'T7', items: ['1x Dry-Aged Ribeye', '1x Mushroom Risotto'], status: 'Plating', time: '25m ago', priority: 'High' },
-    { id: 'K3', table: 'T10', items: ['4x Dark Chocolate Tart'], status: 'New', time: '2m ago', priority: 'Normal' },
-  ];
+  // Kitchen Orders (Live data)
+  const kitchenOrders = orders.filter(o => o.status !== 'Completed').map(o => ({
+    id: o.id,
+    table: 'Takeout/Delivery', // We aren't linking orders to tables in the schema yet
+    items: o.items.map(i => `${i.quantity}x ${i.name}`),
+    status: o.status || 'Pending',
+    time: new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    priority: o.items.length > 3 ? 'High' : 'Normal',
+    originalOrder: o
+  }));
 
   return (
     <div className="space-y-6">
@@ -36,24 +40,33 @@ export const StaffTasks = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
-            {kitchenOrders.map(order => (
-              <div key={order.id} className={`bg-background border rounded-lg p-4 shadow-sm flex flex-col transition-colors ${order.priority === 'High' ? 'border-red-300' : ''}`}>
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <span className="text-lg font-bold block leading-none">Table {order.table.replace('T', '')}</span>
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{order.time}</span>
+            {kitchenOrders.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No active kitchen orders.</p>
+            ) : (
+              kitchenOrders.map(order => (
+                <div key={order.id} className={`bg-background border rounded-lg p-4 shadow-sm flex flex-col transition-colors ${order.priority === 'High' ? 'border-red-300' : ''}`}>
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <span className="text-lg font-bold block leading-none">Order #{order.id}</span>
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{order.time}</span>
+                    </div>
+                    <Badge variant={order.status === 'Completed' ? 'success' : order.status === 'Pending' ? 'default' : 'secondary'}>
+                      {order.status}
+                    </Badge>
                   </div>
-                  <Badge variant={order.status === 'Plating' ? 'success' : order.status === 'New' ? 'default' : 'secondary'}>
-                    {order.status}
-                  </Badge>
+                  <div className="py-2 border-t border-b mb-3">
+                    <ul className="text-sm space-y-1">
+                      {order.items.map((item, idx) => <li key={idx}>• {item}</li>)}
+                    </ul>
+                  </div>
+                  <div className="flex justify-end pt-1">
+                    <Button size="sm" variant="outline" className="border-green-200 text-green-700 hover:bg-green-50" onClick={() => updateOrderStatus(order.id, 'Completed')}>
+                      <CheckCircle2 className="h-4 w-4 mr-2" /> Mark Completed
+                    </Button>
+                  </div>
                 </div>
-                <div className="py-2 border-t border-b mb-3">
-                  <ul className="text-sm space-y-1">
-                    {order.items.map((item, idx) => <li key={idx}>• {item}</li>)}
-                  </ul>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
 

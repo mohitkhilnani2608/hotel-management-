@@ -6,10 +6,9 @@ import { StaffLoginModal } from '../auth/StaffLoginModal';
 import { useRestaurant } from '../../context/RestaurantContext';
 
 export const CustomerLayout = () => {
-  const { customer, logoutCustomer } = useRestaurant();
+  const { customer, logoutCustomer, authModalOpen, setAuthModalOpen } = useRestaurant();
   const location = useLocation();
   const navigate = useNavigate();
-  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
 
   const navLinks = [
@@ -46,7 +45,7 @@ export const CustomerLayout = () => {
               className="text-muted-foreground hover:text-foreground hidden sm:block"
               onClick={() => setIsStaffModalOpen(true)}
             >
-              Staff
+              Admin / Staff
             </Button>
             
             {customer ? (
@@ -55,7 +54,7 @@ export const CustomerLayout = () => {
                 <Button variant="outline" size="sm" onClick={logoutCustomer}>Logout</Button>
               </div>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => setIsCustomerModalOpen(true)}>Login / Sign Up</Button>
+              <Button variant="outline" size="sm" onClick={() => setAuthModalOpen(true)}>Login / Sign Up</Button>
             )}
             
             <Link to="/booking">
@@ -70,8 +69,8 @@ export const CustomerLayout = () => {
       </main>
 
       <CustomerAuthModal
-        isOpen={isCustomerModalOpen}
-        onClose={() => setIsCustomerModalOpen(false)}
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
       />
 
       <StaffLoginModal

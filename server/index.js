@@ -3,7 +3,7 @@ const cors = require('cors');
 const db = require('./db');
 
 const app = express();
-const PORT = 5000;
+const PORT = 5005;
 
 app.use(cors());
 app.use(express.json());
@@ -36,7 +36,6 @@ app.get('/api/orders', (req, res) => {
     db.all('SELECT * FROM Orders ORDER BY createdAt DESC', [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         
-        // Let's fetch items for each order
         const orders = rows;
         let count = 0;
         
@@ -68,6 +67,16 @@ app.post('/api/orders', (req, res) => {
         stmt.finalize();
         
         res.json({ id: orderId, status: 'Pending', total, items });
+    });
+});
+
+app.put('/api/orders/:id/status', (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    db.run('UPDATE Orders SET status = ? WHERE id = ?', [status, id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, id, status });
     });
 });
 

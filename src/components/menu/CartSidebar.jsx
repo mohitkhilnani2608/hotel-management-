@@ -12,13 +12,20 @@ export const CartSidebar = ({ isOpen, onClose }) => {
 
   const handleCheckout = async () => {
     setIsSubmitting(true);
-    const success = await placeOrder();
-    setIsSubmitting(false);
-    if (success) {
-      alert('Order placed successfully!');
-      onClose();
-    } else {
-      alert('Failed to place order. Please try again.');
+    try {
+      const success = await placeOrder();
+      if (success) {
+        alert('Order placed successfully!');
+        onClose();
+      } else {
+        alert('Failed to place order. Please try again.');
+      }
+    } catch (e) {
+      if (e.message !== "Must be logged in to place an order") {
+        alert('Failed to place order. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

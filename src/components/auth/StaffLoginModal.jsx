@@ -52,7 +52,7 @@ export const StaffLoginModal = ({ isOpen, onClose }) => {
             >
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-serif">Staff Authentication</h2>
+                  <h2 className="text-2xl font-serif">Admin / Staff Login</h2>
                   <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
                     <X className="h-5 w-5" />
                   </button>
@@ -66,12 +66,12 @@ export const StaffLoginModal = ({ isOpen, onClose }) => {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">Staff Password</label>
+                    <label className="text-sm font-medium text-muted-foreground">Access Password</label>
                     <Input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter staff password"
+                      placeholder="Enter admin or staff password"
                       className="bg-background/50"
                       autoFocus
                     />

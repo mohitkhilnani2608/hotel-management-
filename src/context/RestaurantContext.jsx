@@ -38,21 +38,7 @@ const initialReservations = [
   { id: 'R1005', guestName: 'Dr. Montague', partySize: 8, tableId: 'T8', date: subHours(now, 2), time: '17:00', status: 'Completed' },
 ];
 
-const monthlyRevenueData = [
-  { month: 'Jan', revenue: 125000, foodCost: 35000, laborCost: 40000, profit: 50000 },
-  { month: 'Feb', revenue: 118000, foodCost: 33000, laborCost: 40000, profit: 45000 },
-  { month: 'Mar', revenue: 142000, foodCost: 39000, laborCost: 42000, profit: 61000 },
-  { month: 'Apr', revenue: 135000, foodCost: 38000, laborCost: 42000, profit: 55000 },
-  { month: 'May', revenue: 156000, foodCost: 42000, laborCost: 45000, profit: 69000 },
-  { month: 'Jun', revenue: 168000, foodCost: 45000, laborCost: 48000, profit: 75000 },
-];
-
-const topSellingItems = [
-  { name: 'Dry-Aged Ribeye', sales: 420, revenue: 35700, fill: 'hsl(var(--primary))' },
-  { name: 'Pan-Seared Scallops', sales: 385, revenue: 14630, fill: 'hsl(var(--primary) / 0.8)' },
-  { name: 'Wagyu Beef Tartare', sales: 310, revenue: 8060, fill: 'hsl(var(--primary) / 0.6)' },
-  { name: 'Truffle Arancini', sales: 290, revenue: 5220, fill: 'hsl(var(--primary) / 0.4)' },
-];
+// Dynamic calculations will be handled inside the provider
 
 const RestaurantContext = createContext();
 
@@ -60,6 +46,7 @@ export const RestaurantProvider = ({ children }) => {
   const [tables, setTables] = useState(initialTables);
   const [menuItems] = useState(initialMenu);
   const [reservations, setReservations] = useState([]);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [cart, setCart] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loungeBookings, setLoungeBookings] = useState([]);
@@ -121,7 +108,10 @@ export const RestaurantProvider = ({ children }) => {
   const clearCart = () => setCart([]);
 
   const placeOrder = async () => {
-    if (cart.length === 0) return;
+    if (!customer) {
+      setAuthModalOpen(true);
+      throw new Error("Must be logged in to place an order");
+    }
     const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     try {
       const response = await fetch('/api/orders', {
@@ -142,6 +132,21 @@ export const RestaurantProvider = ({ children }) => {
     } catch (e) {
       console.error(e);
       return false;
+    }
+  };
+
+  const updateOrderStatus = async (orderId, status) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      if (response.ok) {
+        fetchBackendData();
+      }
+    } catch (e) {
+      console.error('Failed to update order status', e);
     }
   };
 
@@ -209,8 +214,18 @@ export const RestaurantProvider = ({ children }) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
+    
+    let data;
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      data = await res.json();
+    } else {
+      const text = await res.text();
+      console.error("Non-JSON response from server:", text);
+      throw new Error("Server error: Did not receive JSON. The server might be down or misconfigured.");
+    }
+
+    if (!res.ok) throw new Error(data.error || 'Login failed');
     setCustomer(data);
     localStorage.setItem('customerData', JSON.stringify(data));
   };
@@ -221,8 +236,18 @@ export const RestaurantProvider = ({ children }) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
+    
+    let data;
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      data = await res.json();
+    } else {
+      const text = await res.text();
+      console.error("Non-JSON response from server:", text);
+      throw new Error("Server error: Did not receive JSON. The server might be down or misconfigured.");
+    }
+
+    if (!res.ok) throw new Error(data.error || 'Registration failed');
     setCustomer(data);
     localStorage.setItem('customerData', JSON.stringify(data));
   };
@@ -231,6 +256,37 @@ export const RestaurantProvider = ({ children }) => {
     setCustomer(null);
     localStorage.removeItem('customerData');
   };
+
+  const itemSales = {};
+  orders.forEach(order => {
+    (order.items || []).forEach(item => {
+      if (!itemSales[item.name]) itemSales[item.name] = { sales: 0, revenue: 0 };
+      itemSales[item.name].sales += item.quantity;
+      itemSales[item.name].revenue += item.price * item.quantity;
+    });
+  });
+
+  const dynamicTopSellingItems = Object.keys(itemSales)
+    .map((name, idx) => ({
+      name,
+      sales: itemSales[name].sales,
+      revenue: itemSales[name].revenue,
+      fill: `hsl(var(--primary) / ${1 - (idx * 0.15)})`
+    }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 5);
+
+  const monthlyData = {};
+  orders.forEach(order => {
+    const date = new Date(order.createdAt || Date.now());
+    const month = date.toLocaleString('default', { month: 'short' });
+    if (!monthlyData[month]) {
+      monthlyData[month] = { month, revenue: 0, profit: 0 };
+    }
+    monthlyData[month].revenue += order.total;
+    monthlyData[month].profit += order.total * 0.3;
+  });
+  const dynamicMonthlyRevenueData = Object.values(monthlyData);
 
   return (
     <RestaurantContext.Provider value={{
@@ -241,8 +297,8 @@ export const RestaurantProvider = ({ children }) => {
       orders,
       cart,
       analytics,
-      monthlyRevenueData,
-      topSellingItems,
+      monthlyRevenueData: dynamicMonthlyRevenueData,
+      topSellingItems: dynamicTopSellingItems,
       customer,
       updateTableStatus,
       addReservation,
@@ -252,10 +308,13 @@ export const RestaurantProvider = ({ children }) => {
       removeFromCart,
       clearCart,
       placeOrder,
+      updateOrderStatus,
       fetchBackendData,
       loginCustomer,
       registerCustomer,
-      logoutCustomer
+      logoutCustomer,
+      authModalOpen,
+      setAuthModalOpen
     }}>
       {children}
     </RestaurantContext.Provider>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Package, AlertCircle, TrendingUp, ArrowDown } from 'lucide-react';
+import { useRestaurant } from '../../context/RestaurantContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 
@@ -12,6 +13,15 @@ const inventoryItems = [
 ];
 
 export const Inventory = () => {
+  const { orders } = useRestaurant();
+
+  // Dynamic calculations based on orders
+  const totalItemsSold = orders.reduce((sum, order) => {
+    return sum + (order.items?.reduce((itemSum, item) => itemSum + item.quantity, 0) || 0);
+  }, 0);
+
+  const totalValue = orders.reduce((sum, order) => sum + order.total, 0);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -28,9 +38,9 @@ export const Inventory = () => {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,248</div>
+            <div className="text-2xl font-bold">{totalItemsSold}</div>
             <p className="text-xs text-muted-foreground mt-1 flex items-center">
-              Across 12 categories
+              Items ordered all-time
             </p>
           </CardContent>
         </Card>
@@ -54,10 +64,9 @@ export const Inventory = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$42,500</div>
+            <div className="text-2xl font-bold">${totalValue.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground mt-1 flex items-center">
-              <ArrowDown className="h-3 w-3 text-red-500 mr-1" />
-              2% decrease from last week
+              Total revenue value
             </p>
           </CardContent>
         </Card>

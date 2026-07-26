@@ -9,7 +9,7 @@ import { Select } from '../../components/ui/Select';
 
 export const TableBooking = () => {
   const navigate = useNavigate();
-  const { addReservation } = useRestaurant();
+  const { addReservation, customer, setAuthModalOpen } = useRestaurant();
   
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -23,7 +23,25 @@ export const TableBooking = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleNext = () => setStep(s => s + 1);
+  const handleNext = () => {
+    if (!customer && step === 1) {
+      setAuthModalOpen(true);
+      return;
+    }
+    
+    // Auto fill if customer is present and we're moving to step 2
+    if (customer && step === 1 && !formData.firstName) {
+      const parts = customer.name.split(' ');
+      setFormData(prev => ({
+        ...prev,
+        firstName: parts[0] || '',
+        lastName: parts.slice(1).join(' ') || '',
+        email: customer.email || ''
+      }));
+    }
+    
+    setStep(s => s + 1);
+  };
   const handleBack = () => setStep(s => s - 1);
 
   const handleSubmit = (e) => {

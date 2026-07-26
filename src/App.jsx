@@ -59,10 +59,10 @@ function App() {
           <Route path="/admin" element={<ProtectedStaffRoute><AdminLayout /></ProtectedStaffRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="matrix" element={<TableMatrix />} />
-            <Route path="reservations" element={<Reservations />} />
             <Route path="tasks" element={<StaffTasks />} />
-            <Route path="analytics" element={<ProtectedOwnerRoute><OwnerAnalytics /></ProtectedOwnerRoute>} />
+            <Route path="reservations" element={<Reservations />} />
             <Route path="inventory" element={<Inventory />} />
+            <Route path="analytics" element={<ProtectedOwnerRoute><OwnerAnalytics /></ProtectedOwnerRoute>} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Route>
         </Routes>
