@@ -51,6 +51,7 @@ export const RestaurantProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const [loungeBookings, setLoungeBookings] = useState([]);
   const [customer, setCustomer] = useState(null);
+  const [staffUser, setStaffUser] = useState(null);
   const [analytics, setAnalytics] = useState({
     totalRevenue: 0,
     netProfit: 0,
@@ -59,6 +60,18 @@ export const RestaurantProvider = ({ children }) => {
     loungeCount: 0,
     totalCustomers: 0
   });
+
+  // Initialize customer and staff from localStorage
+  useEffect(() => {
+    const savedCustomer = localStorage.getItem('customerData');
+    if (savedCustomer) {
+      setCustomer(JSON.parse(savedCustomer));
+    }
+    const savedStaff = localStorage.getItem('staffData');
+    if (savedStaff) {
+      setStaffUser(JSON.parse(savedStaff));
+    }
+  }, []);
 
   const fetchBackendData = async () => {
     try {
@@ -74,12 +87,6 @@ export const RestaurantProvider = ({ children }) => {
       if (resReq.ok) setReservations(await resReq.json());
       if (loungeReq.ok) setLoungeBookings(await loungeReq.json());
       if (ordersReq.ok) setOrders(await ordersReq.json());
-
-      // Initialize customer from localStorage if exists
-      const storedCustomer = localStorage.getItem('customerData');
-      if (storedCustomer) {
-        setCustomer(JSON.parse(storedCustomer));
-      }
     } catch (error) {
       console.error('Error fetching backend data:', error);
       // Fallback to initial if backend is not running
@@ -103,6 +110,10 @@ export const RestaurantProvider = ({ children }) => {
 
   const removeFromCart = (itemId) => {
     setCart(prev => prev.filter(i => i.id !== itemId));
+  };
+  
+  const updateQuantity = (itemId, quantity) => {
+    setCart(prev => prev.map(i => i.id === itemId ? { ...i, quantity } : i));
   };
 
   const clearCart = () => setCart([]);
@@ -197,7 +208,6 @@ export const RestaurantProvider = ({ children }) => {
       return res;
     }));
     
-    // Auto-update table status
     const res = reservations.find(r => r.id === reservationId);
     const targetTableId = tableId || res?.tableId;
     
@@ -257,6 +267,55 @@ export const RestaurantProvider = ({ children }) => {
     localStorage.removeItem('customerData');
   };
 
+  const loginStaff = async (email, password) => {
+    const res = await fetch('/api/staff/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    
+    let data;
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      data = await res.json();
+    } else {
+      const text = await res.text();
+      throw new Error("Server error: Did not receive JSON.");
+    }
+
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+    setStaffUser(data);
+    localStorage.setItem('staffData', JSON.stringify(data));
+  };
+
+  const registerStaff = async (name, email, password, role) => {
+    const res = await fetch('/api/staff/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, role })
+    });
+    
+    let data;
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      data = await res.json();
+    } else {
+      const text = await res.text();
+      throw new Error("Server error: Did not receive JSON.");
+    }
+
+    if (!res.ok) throw new Error(data.error || 'Registration failed');
+    setStaffUser(data);
+    localStorage.setItem('staffData', JSON.stringify(data));
+  };
+
+  const logoutStaff = () => {
+    setStaffUser(null);
+    localStorage.removeItem('staffData');
+    localStorage.removeItem('ownerAuth');
+    localStorage.removeItem('staffAuth');
+  };
+
   const itemSales = {};
   orders.forEach(order => {
     (order.items || []).forEach(item => {
@@ -306,13 +365,18 @@ export const RestaurantProvider = ({ children }) => {
       updateReservationStatus,
       addToCart,
       removeFromCart,
-      clearCart,
+      updateQuantity,
+      cartTotal: cart.reduce((total, item) => total + (item.price * item.quantity), 0),
       placeOrder,
-      updateOrderStatus,
-      fetchBackendData,
       loginCustomer,
       registerCustomer,
       logoutCustomer,
+      staffUser,
+      loginStaff,
+      registerStaff,
+      logoutStaff,
+      updateOrderStatus,
+      fetchBackendData,
       authModalOpen,
       setAuthModalOpen
     }}>

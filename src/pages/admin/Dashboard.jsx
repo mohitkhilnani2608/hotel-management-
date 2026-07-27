@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { useRestaurant } from '../../context/RestaurantContext';
 
 export const Dashboard = () => {
-  const { tables, reservations, orders, analytics, monthlyRevenueData } = useRestaurant();
-  const isOwner = localStorage.getItem('ownerAuth') === 'true';
+  const { tables, reservations, orders, analytics, monthlyRevenueData, staffUser } = useRestaurant();
+  const isOwner = staffUser?.role === 'Admin';
 
   const totalTables = tables.length;
   const occupiedTables = tables.filter(t => t.status === 'Seated').length;

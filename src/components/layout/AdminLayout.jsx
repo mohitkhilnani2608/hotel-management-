@@ -3,12 +3,14 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Notebook, ChefHat, Bell, Search, Utensils, LineChart, Package, LogOut } from 'lucide-react';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { useRestaurant } from '../../context/RestaurantContext';
 
 export const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { staffUser, logoutStaff } = useRestaurant();
 
-  const isOwner = localStorage.getItem('ownerAuth') === 'true';
+  const isOwner = staffUser?.role === 'Admin';
 
   const navItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -59,11 +61,11 @@ export const AdminLayout = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-serif text-lg">
-                M
+                {staffUser?.name ? staffUser.name.charAt(0).toUpperCase() : 'S'}
               </div>
               <div className="text-sm">
-                <p className="font-medium">{isOwner ? 'Owner' : 'Staff'}</p>
-                <p className="text-muted-foreground text-xs">{isOwner ? 'admin@auradine.com' : 'staff@auradine.com'}</p>
+                <p className="font-medium">{staffUser?.name || 'Staff Member'}</p>
+                <p className="text-muted-foreground text-xs">{staffUser?.email || 'staff@auradine.com'}</p>
               </div>
             </div>
             <Button 
@@ -71,8 +73,7 @@ export const AdminLayout = () => {
               size="icon" 
               className="text-muted-foreground hover:text-destructive"
               onClick={() => {
-                localStorage.removeItem('staffAuth');
-                localStorage.removeItem('ownerAuth');
+                logoutStaff();
                 navigate('/');
               }}
               title="Log Out"

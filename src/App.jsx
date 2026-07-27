@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { RestaurantProvider } from './context/RestaurantContext';
+import { RestaurantProvider, useRestaurant } from './context/RestaurantContext';
 
 // Layouts
 import { CustomerLayout } from './components/layout/CustomerLayout';
@@ -23,7 +23,8 @@ import { OwnerAnalytics } from './pages/admin/OwnerAnalytics';
 import { Inventory } from './pages/admin/Inventory';
 
 const ProtectedOwnerRoute = ({ children }) => {
-  const isOwner = localStorage.getItem('ownerAuth') === 'true';
+  const { staffUser } = useRestaurant();
+  const isOwner = staffUser?.role === 'Admin';
   if (!isOwner) {
     return <Navigate to="/admin" replace />;
   }
@@ -31,7 +32,8 @@ const ProtectedOwnerRoute = ({ children }) => {
 };
 
 const ProtectedStaffRoute = ({ children }) => {
-  const isStaff = localStorage.getItem('staffAuth') === 'true' || localStorage.getItem('ownerAuth') === 'true';
+  const { staffUser } = useRestaurant();
+  const isStaff = staffUser !== null;
   if (!isStaff) {
     return <Navigate to="/" replace />;
   }

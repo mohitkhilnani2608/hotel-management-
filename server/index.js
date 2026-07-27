@@ -168,6 +168,34 @@ app.get('/api/analytics', (req, res) => {
     });
 });
 
+// ---------------------------------------------------------
+// STAFF ENDPOINTS
+// ---------------------------------------------------------
+
+app.post('/api/staff/login', (req, res) => {
+    const { email, password } = req.body;
+    db.get('SELECT id, name, email, role FROM Staff WHERE email = ? AND password = ?', [email, password], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!row) return res.status(401).json({ error: 'Invalid credentials' });
+        res.json(row);
+    });
+});
+
+app.post('/api/staff/register', (req, res) => {
+    const { name, email, password, role } = req.body;
+    const insertRole = role === 'Admin' ? 'Admin' : 'Staff'; // strict validation
+    
+    db.run('INSERT INTO Staff (name, email, password, role) VALUES (?, ?, ?, ?)', [name, email, password, insertRole], function(err) {
+        if (err) {
+            if (err.message.includes('UNIQUE constraint failed')) {
+                return res.status(400).json({ error: 'Email already exists' });
+            }
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ id: this.lastID, name, email, role: insertRole });
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

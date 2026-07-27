@@ -31,6 +31,18 @@ const db = new sqlite3.Database(dbPath, (err) => {
                         db.exec(seedReservations);
                     }
                 });
+
+                // Seed initial staff if empty
+                db.get('SELECT COUNT(*) as count FROM Staff', [], (err, row) => {
+                    if (row && row.count === 0) {
+                        const seedStaff = `
+                            INSERT INTO Staff (name, email, password, role) VALUES 
+                            ('Admin Owner', 'admin@auradine.com', 'admin123', 'Admin'),
+                            ('Staff Member', 'staff@auradine.com', 'staff123', 'Staff');
+                        `;
+                        db.exec(seedStaff);
+                    }
+                });
             }
         });
     }
