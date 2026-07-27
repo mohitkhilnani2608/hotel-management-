@@ -1,12 +1,16 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./db');
+const path = require('path');
 
 const app = express();
-const PORT = 5005;
+const PORT = process.env.PORT || 5005;
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static frontend files from the 'dist' directory
+app.use(express.static(path.join(__dirname, '../dist')));
 
 // --- Customers Auth ---
 app.post('/api/customers/register', (req, res) => {
@@ -194,6 +198,14 @@ app.post('/api/staff/register', (req, res) => {
         }
         res.json({ id: this.lastID, name, email, role: insertRole });
     });
+});
+
+// ---------------------------------------------------------
+// FRONTEND FALLBACK (React Router)
+// ---------------------------------------------------------
+// This must be the last route. It catches all non-API requests and serves index.html
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 app.listen(PORT, () => {
