@@ -106,6 +106,28 @@ app.post('/api/reservations', (req, res) => {
     );
 });
 
+app.put('/api/reservations/:id/status', (req, res) => {
+    const { id } = req.params;
+    const { status, tableId } = req.body;
+    
+    // Update both status and tableId
+    let query = 'UPDATE Reservations SET status = ?';
+    const params = [status];
+    
+    if (tableId !== undefined) {
+        query += ', tableId = ?';
+        params.push(tableId);
+    }
+    
+    query += ' WHERE id = ?';
+    params.push(id);
+    
+    db.run(query, params, function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, id, status, tableId });
+    });
+});
+
 // --- Lounge Bookings ---
 app.get('/api/lounge-bookings', (req, res) => {
     db.all('SELECT * FROM LoungeBookings ORDER BY createdAt DESC', [], (err, rows) => {
@@ -126,6 +148,16 @@ app.post('/api/lounge-bookings', (req, res) => {
             res.json({ id, guestName, eventDetails, guests, date, time, status: 'Confirmed' });
         }
     );
+});
+
+app.put('/api/lounge-bookings/:id/status', (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    db.run('UPDATE LoungeBookings SET status = ? WHERE id = ?', [status, id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, id, status });
+    });
 });
 
 // --- Analytics ---

@@ -90,10 +90,29 @@ export const Reservations = () => {
                   <TableCell className="font-medium">{reservation.time}</TableCell>
                   <TableCell>
                     {table ? (
-                      <div>
+                      <div className="flex flex-col gap-1">
                         <div className="font-medium">T{table.number}</div>
                         <div className="text-[10px] text-muted-foreground">{table.location}</div>
+                        {reservation.status === 'Confirmed' && (
+                          <span 
+                            className="text-[10px] text-blue-500 cursor-pointer hover:underline"
+                            onClick={() => updateReservationStatus(reservation.id, reservation.status, '')}
+                          >
+                            Unassign
+                          </span>
+                        )}
                       </div>
+                    ) : reservation.status === 'Confirmed' ? (
+                      <Select 
+                        className="h-8 text-xs min-w-[100px]"
+                        onChange={(e) => updateReservationStatus(reservation.id, reservation.status, e.target.value)}
+                        value=""
+                      >
+                        <option value="" disabled>Assign Table</option>
+                        {tables.filter(t => t.status === 'Available' && t.capacity >= reservation.partySize).map(t => (
+                          <option key={t.id} value={t.id}>T{t.number} ({t.capacity} pax)</option>
+                        ))}
+                      </Select>
                     ) : (
                       <span className="text-muted-foreground italic text-xs">Unassigned</span>
                     )}
@@ -102,7 +121,13 @@ export const Reservations = () => {
                   <TableCell>
                     <div className="flex items-center justify-end gap-2">
                       {reservation.status === 'Confirmed' && (
-                        <Button variant="outline" size="sm" onClick={() => updateReservationStatus(reservation.id, 'Seated')} className="h-8">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => updateReservationStatus(reservation.id, 'Seated')} 
+                          className="h-8"
+                          disabled={!reservation.tableId}
+                        >
                           Seat
                         </Button>
                       )}

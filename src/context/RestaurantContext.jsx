@@ -3,15 +3,15 @@ import { subHours, addDays } from 'date-fns';
 
 const initialTables = [
   { id: 'T1', number: '1', capacity: 2, status: 'Available', type: 'Window', location: 'Main Dining' },
-  { id: 'T2', number: '2', capacity: 2, status: 'Seated', type: 'Standard', location: 'Main Dining' },
+  { id: 'T2', number: '2', capacity: 2, status: 'Available', type: 'Standard', location: 'Main Dining' },
   { id: 'T3', number: '3', capacity: 4, status: 'Available', type: 'Booth', location: 'Main Dining' },
-  { id: 'T4', number: '4', capacity: 4, status: 'Dirty', type: 'Booth', location: 'Main Dining' },
+  { id: 'T4', number: '4', capacity: 4, status: 'Available', type: 'Booth', location: 'Main Dining' },
   { id: 'T5', number: '5', capacity: 6, status: 'Available', type: 'Round', location: 'Main Dining' },
   { id: 'T6', number: '6', capacity: 2, status: 'Available', type: 'Bar', location: 'Bar Area' },
-  { id: 'T7', number: '7', capacity: 2, status: 'Seated', type: 'Bar', location: 'Bar Area' },
+  { id: 'T7', number: '7', capacity: 2, status: 'Available', type: 'Bar', location: 'Bar Area' },
   { id: 'T8', number: '8', capacity: 8, status: 'Available', type: 'Private', location: 'Private Room' },
   { id: 'T9', number: '9', capacity: 4, status: 'Available', type: 'Patio', location: 'Outdoor' },
-  { id: 'T10', number: '10', capacity: 4, status: 'Seated', type: 'Patio', location: 'Outdoor' },
+  { id: 'T10', number: '10', capacity: 4, status: 'Available', type: 'Patio', location: 'Outdoor' },
 ];
 
 const initialMenu = [
@@ -81,10 +81,27 @@ export const RestaurantProvider = ({ children }) => {
         fetch('/api/orders')
       ]);
       const resAnalytics = await fetch('/api/analytics');
-      const dataAnalytics = await resAnalytics.json();
-      setAnalytics(dataAnalytics);
+      if (resAnalytics.ok) {
+        const dataAnalytics = await resAnalytics.json();
+        setAnalytics(dataAnalytics);
+      }
 
-      if (resReq.ok) setReservations(await resReq.json());
+      if (resReq.ok) {
+        const resData = await resReq.json();
+        setReservations(resData);
+        
+        // Dynamically compute table statuses based on Seated reservations
+        setTables(prevTables => {
+          return prevTables.map(table => {
+            const isSeated = resData.some(r => r.tableId === table.id && r.status === 'Seated');
+            // Keep Dirty status if it was set manually, otherwise reset or mark Seated
+            if (isSeated) return { ...table, status: 'Seated' };
+            if (table.status === 'Dirty') return table;
+            return { ...table, status: 'Available' };
+          });
+        });
+      }
+      
       if (loungeReq.ok) setLoungeBookings(await loungeReq.json());
       if (ordersReq.ok) setOrders(await ordersReq.json());
     } catch (error) {
@@ -198,23 +215,42 @@ export const RestaurantProvider = ({ children }) => {
     }
   };
 
-  const updateReservationStatus = (reservationId, newStatus, tableId = null) => {
+  const updateReservationStatus = async (reservationId, newStatus, tableId = null) => {
+    // Optimistic local update
     setReservations(reservations.map(res => {
       if (res.id === reservationId) {
         const updated = { ...res, status: newStatus };
-        if (tableId) updated.tableId = tableId;
+        if (tableId !== null) updated.tableId = tableId;
         return updated;
       }
       return res;
     }));
     
-    const res = reservations.find(r => r.id === reservationId);
-    const targetTableId = tableId || res?.tableId;
+    // Auto-update table status locally for immediate feedback
+    const resObj = reservations.find(r => r.id === reservationId);
+    const targetTableId = tableId !== null ? tableId : resObj?.tableId;
     
     if (targetTableId) {
       if (newStatus === 'Seated') updateTableStatus(targetTableId, 'Seated');
       if (newStatus === 'Completed') updateTableStatus(targetTableId, 'Dirty');
-      if (newStatus === 'Canceled' && res?.status === 'Seated') updateTableStatus(targetTableId, 'Dirty');
+      if (newStatus === 'Canceled' && resObj?.status === 'Seated') updateTableStatus(targetTableId, 'Dirty');
+    }
+
+    // Persist to backend
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          status: newStatus,
+          tableId: tableId !== null ? tableId : undefined
+        })
+      });
+      if (response.ok) {
+        fetchBackendData();
+      }
+    } catch (e) {
+      console.error('Failed to update reservation status', e);
     }
   };
 
