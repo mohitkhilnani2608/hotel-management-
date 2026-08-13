@@ -19,6 +19,19 @@ const db = new sqlite3.Database(dbPath, (err) => {
             } else {
                 console.log('Database schema applied successfully.');
                 
+                // Migrate Orders table to add tableId if not present
+                db.run('ALTER TABLE Orders ADD COLUMN tableId TEXT', (err) => {
+                    if (err) {
+                        if (err.message.includes('duplicate column name')) {
+                            console.log('tableId column already exists in Orders.');
+                        } else {
+                            console.error('Migration error: adding tableId to Orders:', err);
+                        }
+                    } else {
+                        console.log('tableId column added to Orders table.');
+                    }
+                });
+                
                 // Seed initial data if reservations are empty
                 db.get('SELECT COUNT(*) as count FROM Reservations', [], (err, row) => {
                     if (row && row.count === 0) {

@@ -141,6 +141,14 @@ export const RestaurantProvider = ({ children }) => {
       throw new Error("Must be logged in to place an order");
     }
     const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    
+    // Find active seated reservation for customer to link to tableId
+    const activeSeatedRes = reservations.find(r => 
+      (r.customerId === customer.id || r.guestName.toLowerCase() === customer.name.toLowerCase()) && 
+      r.status === 'Seated'
+    );
+    const tableId = activeSeatedRes ? activeSeatedRes.tableId : null;
+
     try {
       const response = await fetch('/api/orders', {
         method: 'POST',
@@ -148,7 +156,8 @@ export const RestaurantProvider = ({ children }) => {
         body: JSON.stringify({ 
           total: cartTotal, 
           items: cart,
-          customerId: customer?.id || null 
+          customerId: customer?.id || null,
+          tableId: tableId
         })
       });
       if (response.ok) {
@@ -159,6 +168,85 @@ export const RestaurantProvider = ({ children }) => {
       return false;
     } catch (e) {
       console.error(e);
+      return false;
+    }
+  };
+
+  const fetchActiveTableOrder = async (tableId) => {
+    try {
+      const res = await fetch(`/api/orders/active-table/${tableId}`);
+      if (res.ok) {
+        return await res.json();
+      }
+      return null;
+    } catch (e) {
+      console.error("Failed to fetch active table order:", e);
+      return null;
+    }
+  };
+
+  const createTableOrder = async (tableId, items, customerId = null) => {
+    const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ total, items, customerId, tableId })
+      });
+      if (res.ok) {
+        fetchBackendData();
+        return await res.json();
+      }
+      return null;
+    } catch (e) {
+      console.error("Failed to create table order:", e);
+      return null;
+    }
+  };
+
+  const updateTableOrderItems = async (orderId, items) => {
+    const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    try {
+      const res = await fetch(`/api/orders/${orderId}/items`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ total, items })
+      });
+      if (res.ok) {
+        fetchBackendData();
+        return await res.json();
+      }
+      return null;
+    } catch (e) {
+      console.error("Failed to update table order items:", e);
+      return null;
+    }
+  };
+
+  const settleTableOrder = async (orderId, tableId) => {
+    try {
+      // 1. Mark the order as Completed
+      const orderRes = await fetch(`/api/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Completed' })
+      });
+
+      if (!orderRes.ok) return false;
+
+      // 2. Find the reservation associated with the seated table and mark it Completed
+      const activeRes = reservations.find(r => r.tableId === tableId && r.status === 'Seated');
+      if (activeRes) {
+        await updateReservationStatus(activeRes.id, 'Completed', tableId);
+      }
+
+      // 3. Mark the table status as Dirty locally
+      updateTableStatus(tableId, 'Dirty');
+      
+      fetchBackendData();
+      return true;
+    } catch (e) {
+      console.error("Failed to settle table order:", e);
       return false;
     }
   };
@@ -414,7 +502,11 @@ export const RestaurantProvider = ({ children }) => {
       updateOrderStatus,
       fetchBackendData,
       authModalOpen,
-      setAuthModalOpen
+      setAuthModalOpen,
+      fetchActiveTableOrder,
+      createTableOrder,
+      updateTableOrderItems,
+      settleTableOrder
     }}>
       {children}
     </RestaurantContext.Provider>

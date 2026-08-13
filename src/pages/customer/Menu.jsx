@@ -53,7 +53,7 @@ export const Menu = () => {
                   {categories.map(category => (
                     <button
                       key={category}
-                      onClick={() => setSelectedCategory(category)}
+                      //onClick={() => setSelectedCategory(category)}
                       className={`text-left px-4 py-2 rounded-lg transition-colors ${
                         selectedCategory === category 
                           ? 'bg-primary text-primary-foreground font-medium' 
@@ -75,7 +75,7 @@ export const Menu = () => {
                     type="checkbox" 
                     className="accent-primary w-4 h-4"
                     checked={showVeganOnly}
-                    onChange={(e) => setShowVeganOnly(e.target.checked)}
+                    //onChange={(e) => setShowVeganOnly(e.target.checked)}
                   />
                   <span className="text-sm font-medium">Vegetarian / Vegan</span>
                 </label>
