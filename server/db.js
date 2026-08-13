@@ -54,6 +54,13 @@ const db = new sqlite3.Database(dbPath, (err) => {
                             ('Staff Member', 'staff@auradine.com', 'staff123', 'Staff');
                         `;
                         db.exec(seedStaff);
+                    } else {
+                        // Ensure staff@auradine.com exists even if DB already exists
+                        db.get('SELECT COUNT(*) as count FROM Staff WHERE email = ?', ['staff@auradine.com'], (err, row) => {
+                            if (row && row.count === 0) {
+                                db.run("INSERT INTO Staff (name, email, password, role) VALUES ('Staff Member', 'staff@auradine.com', 'staff123', 'Staff')");
+                            }
+                        });
                     }
                 });
             }

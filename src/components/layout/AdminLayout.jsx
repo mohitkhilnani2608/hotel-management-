@@ -1,16 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Notebook, ChefHat, Bell, Search, Utensils, LineChart, Package, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Notebook, ChefHat, Bell, Search, Utensils, LineChart, Package, LogOut, KeyRound } from 'lucide-react';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { useRestaurant } from '../../context/RestaurantContext';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from '../ui/Dialog';
 
 export const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { staffUser, logoutStaff } = useRestaurant();
+  const { staffUser, logoutStaff, changeStaffPassword } = useRestaurant();
 
   const isOwner = staffUser?.role === 'Admin';
+
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -24,6 +33,39 @@ export const AdminLayout = () => {
     navItems.push({ name: 'Guests', path: '/admin/guests', icon: Users });
     navItems.push({ name: 'Analytics & Reports', path: '/admin/analytics', icon: LineChart });
   }
+
+  const handleChangePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMessage('');
+    setSuccessMessage('');
+    
+    if (newPassword !== confirmPassword) {
+      setErrorMessage('New passwords do not match.');
+      return;
+    }
+
+    if (newPassword.length < 4) {
+      setErrorMessage('Password must be at least 4 characters long.');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      await changeStaffPassword(staffUser.email, currentPassword, newPassword);
+      setSuccessMessage('Password changed successfully');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => {
+        setIsChangePasswordOpen(false);
+        setSuccessMessage('');
+      }, 1500);
+    } catch (err) {
+      setErrorMessage(err.message || 'Failed to update password.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-muted/20 flex font-sans text-foreground">
@@ -68,18 +110,33 @@ export const AdminLayout = () => {
                 <p className="text-muted-foreground text-xs">{staffUser?.email || 'staff@auradine.com'}</p>
               </div>
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-muted-foreground hover:text-destructive"
-              onClick={() => {
-                logoutStaff();
-                navigate('/');
-              }}
-              title="Log Out"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-muted-foreground hover:text-primary"
+                onClick={() => {
+                  setErrorMessage('');
+                  setSuccessMessage('');
+                  setIsChangePasswordOpen(true);
+                }}
+                title="Change Password"
+              >
+                <KeyRound className="h-5 w-5" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-muted-foreground hover:text-destructive"
+                onClick={() => {
+                  logoutStaff();
+                  navigate('/');
+                }}
+                title="Log Out"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </aside>
@@ -108,6 +165,83 @@ export const AdminLayout = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Change Password Dialog */}
+      <Dialog open={isChangePasswordOpen} onOpenChange={(open) => !open && setIsChangePasswordOpen(false)}>
+        <DialogHeader>
+          <DialogTitle className="font-serif text-2xl">Change Password</DialogTitle>
+          <DialogDescription>
+            Enter your current password and your new password twice to confirm changes.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleChangePasswordSubmit} className="space-y-4 py-4">
+          {errorMessage && (
+            <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg border border-destructive/20 font-medium">
+              {errorMessage}
+            </div>
+          )}
+          {successMessage && (
+            <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-sm p-3 rounded-lg border border-green-200 dark:border-green-800 font-medium">
+              {successMessage}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Current Password</label>
+            <Input 
+              type="password" 
+              required 
+              value={currentPassword} 
+              onChange={(e) => setCurrentPassword(e.target.value)} 
+              placeholder="••••••••"
+              disabled={isSubmitting}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">New Password</label>
+            <Input 
+              type="password" 
+              required 
+              value={newPassword} 
+              onChange={(e) => setNewPassword(e.target.value)} 
+              placeholder="••••••••"
+              disabled={isSubmitting}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Confirm New Password</label>
+            <Input 
+              type="password" 
+              required 
+              value={confirmPassword} 
+              onChange={(e) => setConfirmPassword(e.target.value)} 
+              placeholder="••••••••"
+              disabled={isSubmitting}
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setIsChangePasswordOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="bg-primary text-primary-foreground"
+            >
+              {isSubmitting ? 'Updating...' : 'Update Password'}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   );
 };
