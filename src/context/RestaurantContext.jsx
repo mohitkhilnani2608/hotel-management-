@@ -879,7 +879,7 @@ export const RestaurantProvider = ({ children }) => {
       email.trim().toLowerCase();
 
     const res = await fetch(
-      '/api/staff/forgot-password',
+      'http://localhost:5005/api/staff/forgot-password',
       {
         method: 'POST',
         headers: {
@@ -938,7 +938,7 @@ export const RestaurantProvider = ({ children }) => {
       email.trim().toLowerCase();
 
     const res = await fetch(
-      '/api/staff/verify-reset-otp',
+      'http://localhost:5005/api/staff/verify-reset-otp',
       {
         method: 'POST',
         headers: {
@@ -998,7 +998,7 @@ export const RestaurantProvider = ({ children }) => {
       email.trim().toLowerCase();
 
     const res = await fetch(
-      '/api/staff/reset-password',
+      'http://localhost:5005/api/staff/reset-password',
       {
         method: 'PUT',
         headers: {
