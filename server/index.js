@@ -7,16 +7,22 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 5005;
 
+// Middleware for CORS & Body Parsing
 app.use(cors());
 app.use(express.json());
 
-// Path to static frontend dist folder
-const distPath = path.resolve(__dirname, '../dist');
+// Set Content Security Policy (CSP) headers to permit Google Fonts & Assets
+app.use((req, res, next) => {
+    res.setHeader(
+        'Content-Security-Policy',
+        "default-src 'self'; font-src 'self' https://fonts.gstatic.com data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https:; connect-src 'self' *;"
+    );
+    next();
+});
 
-// Serve static frontend files
-if (fs.existsSync(distPath)) {
-    app.use(express.static(distPath));
-}
+// Static frontend dist path resolution
+const distPath = path.resolve(__dirname, '../dist');
+app.use(express.static(distPath));
 
 // =========================================================
 // CUSTOMERS AUTH
@@ -767,7 +773,7 @@ app.get('*', (req, res) => {
     if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
     } else {
-        res.status(404).send('Frontend build not found. Please run the build script (npm run build) to generate the dist folder.');
+        res.status(404).send('Frontend build not found. Please run "npm run build" to create the dist directory.');
     }
 });
 
