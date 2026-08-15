@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const db = require('./db');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 5005;
@@ -9,11 +10,13 @@ const PORT = process.env.PORT || 5005;
 app.use(cors());
 app.use(express.json());
 
-// Serve static frontend files only in production
-if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../dist')));
-}
+// Path to static frontend dist folder
+const distPath = path.resolve(__dirname, '../dist');
 
+// Serve static frontend files
+if (fs.existsSync(distPath)) {
+    app.use(express.static(distPath));
+}
 
 // =========================================================
 // CUSTOMERS AUTH
@@ -70,7 +73,6 @@ app.post('/api/customers/login', (req, res) => {
         }
     );
 });
-
 
 // =========================================================
 // ORDERS
@@ -275,7 +277,6 @@ app.put('/api/orders/:id/status', (req, res) => {
     );
 });
 
-
 // =========================================================
 // RESERVATIONS
 // =========================================================
@@ -305,11 +306,7 @@ app.post('/api/reservations', (req, res) => {
         customerId
     } = req.body;
 
-    const id =
-        'R' +
-        Math.floor(
-            1000 + Math.random() * 9000
-        );
+    const id = 'R' + Math.floor(1000 + Math.random() * 9000);
 
     db.run(
         'INSERT INTO Reservations (id, guestName, partySize, date, time, customerId) VALUES (?, ?, ?, ?, ?, ?)',
@@ -345,9 +342,7 @@ app.put('/api/reservations/:id/status', (req, res) => {
     const { id } = req.params;
     const { status, tableId } = req.body;
 
-    let query =
-        'UPDATE Reservations SET status = ?';
-
+    let query = 'UPDATE Reservations SET status = ?';
     const params = [status];
 
     if (tableId !== undefined) {
@@ -378,7 +373,6 @@ app.put('/api/reservations/:id/status', (req, res) => {
     );
 });
 
-
 // =========================================================
 // LOUNGE BOOKINGS
 // =========================================================
@@ -408,11 +402,7 @@ app.post('/api/lounge-bookings', (req, res) => {
         time
     } = req.body;
 
-    const id =
-        'L' +
-        Math.floor(
-            1000 + Math.random() * 9000
-        );
+    const id = 'L' + Math.floor(1000 + Math.random() * 9000);
 
     db.run(
         'INSERT INTO LoungeBookings (id, guestName, eventDetails, guests, date, time) VALUES (?, ?, ?, ?, ?, ?)',
@@ -467,27 +457,17 @@ app.put('/api/lounge-bookings/:id/status', (req, res) => {
     );
 });
 
-
 // =========================================================
 // ANALYTICS
 // =========================================================
 
 app.get('/api/analytics', (req, res) => {
     const queries = {
-        totalRevenue:
-            'SELECT SUM(total) as value FROM Orders',
-
-        orderCount:
-            'SELECT COUNT(*) as count FROM Orders',
-
-        reservationCount:
-            'SELECT COUNT(*) as count FROM Reservations',
-
-        loungeCount:
-            'SELECT COUNT(*) as count FROM LoungeBookings',
-
-        totalCustomers:
-            'SELECT COUNT(*) as count FROM Customers'
+        totalRevenue: 'SELECT SUM(total) as value FROM Orders',
+        orderCount: 'SELECT COUNT(*) as count FROM Orders',
+        reservationCount: 'SELECT COUNT(*) as count FROM Reservations',
+        loungeCount: 'SELECT COUNT(*) as count FROM LoungeBookings',
+        totalCustomers: 'SELECT COUNT(*) as count FROM Customers'
     };
 
     const results = {
@@ -500,69 +480,40 @@ app.get('/api/analytics', (req, res) => {
     };
 
     let completed = 0;
+    const totalQueries = Object.keys(queries).length;
 
-    const totalQueries =
-        Object.keys(queries).length;
-
-    Object.entries(queries).forEach(
-        ([key, query]) => {
-            db.get(
-                query,
-                [],
-                (err, row) => {
-                    if (!err && row) {
-
-                        if (
-                            key === 'totalRevenue'
-                        ) {
-                            results.totalRevenue =
-                                row.value || 0;
-
-                            results.netProfit =
-                                results.totalRevenue *
-                                0.3;
-                        } else {
-                            results[key] =
-                                row.count || 0;
-                        }
-                    }
-
-                    completed++;
-
-                    if (
-                        completed === totalQueries
-                    ) {
-                        res.json(results);
-                    }
+    Object.entries(queries).forEach(([key, query]) => {
+        db.get(query, [], (err, row) => {
+            if (!err && row) {
+                if (key === 'totalRevenue') {
+                    results.totalRevenue = row.value || 0;
+                    results.netProfit = results.totalRevenue * 0.3;
+                } else {
+                    results[key] = row.count || 0;
                 }
-            );
-        }
-    );
-});
+            }
 
+            completed++;
+
+            if (completed === totalQueries) {
+                res.json(results);
+            }
+        });
+    });
+});
 
 // =========================================================
 // STAFF ENDPOINTS
 // =========================================================
 
-// STAFF LOGIN
-
 app.post('/api/staff/login', (req, res) => {
     const { email, password } = req.body;
-
-    const normalizedEmail =
-        String(email || '')
-            .trim()
-            .toLowerCase();
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
     db.get(
         'SELECT id, name, email, role FROM Staff WHERE LOWER(email) = ? AND password = ?',
-        [
-            normalizedEmail,
-            password
-        ],
+        [normalizedEmail, password],
         (err, row) => {
-
             if (err) {
                 return res.status(500).json({
                     error: err.message
@@ -580,47 +531,19 @@ app.post('/api/staff/login', (req, res) => {
     );
 });
 
-
-// STAFF REGISTER
-
 app.post('/api/staff/register', (req, res) => {
-    const {
-        name,
-        email,
-        password,
-        role
-    } = req.body;
-
-    const normalizedEmail =
-        String(email || '')
-            .trim()
-            .toLowerCase();
-
-    const insertRole =
-        role === 'Admin'
-            ? 'Admin'
-            : 'Staff';
+    const { name, email, password, role } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const insertRole = role === 'Admin' ? 'Admin' : 'Staff';
 
     db.run(
         'INSERT INTO Staff (name, email, password, role) VALUES (?, ?, ?, ?)',
-        [
-            name,
-            normalizedEmail,
-            password,
-            insertRole
-        ],
+        [name, normalizedEmail, password, insertRole],
         function(err) {
-
             if (err) {
-
-                if (
-                    err.message.includes(
-                        'UNIQUE constraint failed'
-                    )
-                ) {
+                if (err.message.includes('UNIQUE constraint failed')) {
                     return res.status(400).json({
-                        error:
-                            'Email already exists'
+                        error: 'Email already exists'
                     });
                 }
 
@@ -639,375 +562,219 @@ app.post('/api/staff/register', (req, res) => {
     );
 });
 
+app.put('/api/staff/change-password', (req, res) => {
+    const { email, currentPassword, newPassword } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
-// =========================================================
-// CHANGE PASSWORD
-// =========================================================
+    db.get(
+        'SELECT id, password FROM Staff WHERE LOWER(email) = ?',
+        [normalizedEmail],
+        (err, row) => {
+            if (err) {
+                return res.status(500).json({
+                    error: err.message
+                });
+            }
 
-app.put(
-    '/api/staff/change-password',
-    (req, res) => {
+            if (!row) {
+                return res.status(404).json({
+                    error: 'Staff member not found'
+                });
+            }
 
-        const {
-            email,
-            currentPassword,
-            newPassword
-        } = req.body;
+            if (row.password !== currentPassword) {
+                return res.status(401).json({
+                    error: 'Incorrect current password'
+                });
+            }
 
-        const normalizedEmail =
-            String(email || '')
-                .trim()
-                .toLowerCase();
-
-        db.get(
-            'SELECT id, password FROM Staff WHERE LOWER(email) = ?',
-            [normalizedEmail],
-            (err, row) => {
-
-                if (err) {
-                    return res.status(500).json({
-                        error: err.message
-                    });
-                }
-
-                if (!row) {
-                    return res.status(404).json({
-                        error:
-                            'Staff member not found'
-                    });
-                }
-
-                if (
-                    row.password !==
-                    currentPassword
-                ) {
-                    return res.status(401).json({
-                        error:
-                            'Incorrect current password'
-                    });
-                }
-
-                db.run(
-                    'UPDATE Staff SET password = ? WHERE id = ?',
-                    [
-                        newPassword,
-                        row.id
-                    ],
-                    function(err) {
-
-                        if (err) {
-                            return res.status(500).json({
-                                error:
-                                    err.message
-                            });
-                        }
-
-                        res.json({
-                            success: true,
-                            message:
-                                'Password updated successfully'
+            db.run(
+                'UPDATE Staff SET password = ? WHERE id = ?',
+                [newPassword, row.id],
+                function(err) {
+                    if (err) {
+                        return res.status(500).json({
+                            error: err.message
                         });
                     }
-                );
-            }
-        );
-    }
-);
 
+                    res.json({
+                        success: true,
+                        message: 'Password updated successfully'
+                    });
+                }
+            );
+        }
+    );
+});
 
 // =========================================================
 // FORGOT PASSWORD
 // =========================================================
 
-// Temporary OTP storage.
-// OTP is kept in server memory and expires after 10 minutes.
 const passwordResetOtps = new Map();
 
+app.post('/api/staff/forgot-password', (req, res) => {
+    const { email } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
-// STEP 1:
-// Generate OTP for registered staff email
-
-app.post(
-    '/api/staff/forgot-password',
-    (req, res) => {
-
-        const { email } = req.body;
-
-        const normalizedEmail =
-            String(email || '')
-                .trim()
-                .toLowerCase();
-
-        if (!normalizedEmail) {
-            return res.status(400).json({
-                error:
-                    'Email address is required'
-            });
-        }
-
-        db.get(
-            'SELECT id, name, email FROM Staff WHERE LOWER(email) = ?',
-            [normalizedEmail],
-            (err, row) => {
-
-                if (err) {
-                    return res.status(500).json({
-                        error:
-                            err.message
-                    });
-                }
-
-                if (!row) {
-                    return res.status(404).json({
-                        error:
-                            'No staff account found with this email'
-                    });
-                }
-
-                // Generate 6 digit OTP
-                const otp =
-                    Math.floor(
-                        100000 +
-                        Math.random() *
-                        900000
-                    ).toString();
-
-                const expiresAt =
-                    Date.now() +
-                    10 * 60 * 1000;
-
-                passwordResetOtps.set(
-                    normalizedEmail,
-                    {
-                        otp,
-                        expiresAt,
-                        verified: false
-                    }
-                );
-
-                // OTP is returned so frontend
-                // can show it in notification.
-                res.json({
-                    success: true,
-                    message:
-                        'Password reset code generated successfully',
-                    otp,
-                    expiresIn: 600
-                });
-            }
-        );
-    }
-);
-
-
-// STEP 2:
-// Verify OTP
-
-app.post(
-    '/api/staff/verify-reset-otp',
-    (req, res) => {
-
-        const {
-            email,
-            otp
-        } = req.body;
-
-        const normalizedEmail =
-            String(email || '')
-                .trim()
-                .toLowerCase();
-
-        const enteredOtp =
-            String(otp || '').trim();
-
-        const resetData =
-            passwordResetOtps.get(
-                normalizedEmail
-            );
-
-        if (!resetData) {
-            return res.status(400).json({
-                error:
-                    'No password reset request found. Please request a new code.'
-            });
-        }
-
-        if (
-            Date.now() >
-            resetData.expiresAt
-        ) {
-
-            passwordResetOtps.delete(
-                normalizedEmail
-            );
-
-            return res.status(400).json({
-                error:
-                    'Reset code has expired. Please request a new code.'
-            });
-        }
-
-        if (
-            resetData.otp !==
-            enteredOtp
-        ) {
-            return res.status(400).json({
-                error:
-                    'Invalid reset code'
-            });
-        }
-
-        resetData.verified = true;
-
-        passwordResetOtps.set(
-            normalizedEmail,
-            resetData
-        );
-
-        res.json({
-            success: true,
-            message:
-                'Reset code verified successfully'
+    if (!normalizedEmail) {
+        return res.status(400).json({
+            error: 'Email address is required'
         });
     }
-);
 
-
-// STEP 3:
-// Reset password using same email
-
-app.put(
-    '/api/staff/reset-password',
-    (req, res) => {
-
-        const {
-            email,
-            newPassword
-        } = req.body;
-
-        const normalizedEmail =
-            String(email || '')
-                .trim()
-                .toLowerCase();
-
-        if (!newPassword) {
-            return res.status(400).json({
-                error:
-                    'New password is required'
-            });
-        }
-
-        if (
-            newPassword.length < 4
-        ) {
-            return res.status(400).json({
-                error:
-                    'Password must be at least 4 characters'
-            });
-        }
-
-        const resetData =
-            passwordResetOtps.get(
-                normalizedEmail
-            );
-
-        if (!resetData) {
-            return res.status(400).json({
-                error:
-                    'Password reset request not found'
-            });
-        }
-
-        if (
-            Date.now() >
-            resetData.expiresAt
-        ) {
-
-            passwordResetOtps.delete(
-                normalizedEmail
-            );
-
-            return res.status(400).json({
-                error:
-                    'Reset code has expired. Please request a new code.'
-            });
-        }
-
-        if (!resetData.verified) {
-            return res.status(401).json({
-                error:
-                    'Please verify the reset code first'
-            });
-        }
-
-        // Update the EXISTING staff account.
-        // This does NOT create a new account.
-        db.run(
-            'UPDATE Staff SET password = ? WHERE LOWER(email) = ?',
-            [
-                newPassword,
-                normalizedEmail
-            ],
-            function(err) {
-
-                if (err) {
-                    return res.status(500).json({
-                        error:
-                            err.message
-                    });
-                }
-
-                if (this.changes === 0) {
-                    return res.status(404).json({
-                        error:
-                            'Staff member not found'
-                    });
-                }
-
-                // Remove OTP after successful reset
-                passwordResetOtps.delete(
-                    normalizedEmail
-                );
-
-                res.json({
-                    success: true,
-                    message:
-                        'Password reset successfully'
+    db.get(
+        'SELECT id, name, email FROM Staff WHERE LOWER(email) = ?',
+        [normalizedEmail],
+        (err, row) => {
+            if (err) {
+                return res.status(500).json({
+                    error: err.message
                 });
             }
-        );
+
+            if (!row) {
+                return res.status(404).json({
+                    error: 'No staff account found with this email'
+                });
+            }
+
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            const expiresAt = Date.now() + 10 * 60 * 1000;
+
+            passwordResetOtps.set(normalizedEmail, {
+                otp,
+                expiresAt,
+                verified: false
+            });
+
+            res.json({
+                success: true,
+                message: 'Password reset code generated successfully',
+                otp,
+                expiresIn: 600
+            });
+        }
+    );
+});
+
+app.post('/api/staff/verify-reset-otp', (req, res) => {
+    const { email, otp } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const enteredOtp = String(otp || '').trim();
+
+    const resetData = passwordResetOtps.get(normalizedEmail);
+
+    if (!resetData) {
+        return res.status(400).json({
+            error: 'No password reset request found. Please request a new code.'
+        });
     }
-);
 
+    if (Date.now() > resetData.expiresAt) {
+        passwordResetOtps.delete(normalizedEmail);
+        return res.status(400).json({
+            error: 'Reset code has expired. Please request a new code.'
+        });
+    }
 
-// =========================================================
-// FRONTEND
-// ONLY IN PRODUCTION
-// =========================================================
+    if (resetData.otp !== enteredOtp) {
+        return res.status(400).json({
+            error: 'Invalid reset code'
+        });
+    }
 
-if (process.env.NODE_ENV === 'production') {
+    resetData.verified = true;
+    passwordResetOtps.set(normalizedEmail, resetData);
 
-    app.get('*', (req, res) => {
-
-        res.sendFile(
-            path.join(
-                __dirname,
-                '../dist/index.html'
-            )
-        );
+    res.json({
+        success: true,
+        message: 'Reset code verified successfully'
     });
-}
+});
 
+app.put('/api/staff/reset-password', (req, res) => {
+    const { email, newPassword } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+
+    if (!newPassword) {
+        return res.status(400).json({
+            error: 'New password is required'
+        });
+    }
+
+    if (newPassword.length < 4) {
+        return res.status(400).json({
+            error: 'Password must be at least 4 characters'
+        });
+    }
+
+    const resetData = passwordResetOtps.get(normalizedEmail);
+
+    if (!resetData) {
+        return res.status(400).json({
+            error: 'Password reset request not found'
+        });
+    }
+
+    if (Date.now() > resetData.expiresAt) {
+        passwordResetOtps.delete(normalizedEmail);
+        return res.status(400).json({
+            error: 'Reset code has expired. Please request a new code.'
+        });
+    }
+
+    if (!resetData.verified) {
+        return res.status(401).json({
+            error: 'Please verify the reset code first'
+        });
+    }
+
+    db.run(
+        'UPDATE Staff SET password = ? WHERE LOWER(email) = ?',
+        [newPassword, normalizedEmail],
+        function(err) {
+            if (err) {
+                return res.status(500).json({
+                    error: err.message
+                });
+            }
+
+            if (this.changes === 0) {
+                return res.status(404).json({
+                    error: 'Staff member not found'
+                });
+            }
+
+            passwordResetOtps.delete(normalizedEmail);
+
+            res.json({
+                success: true,
+                message: 'Password reset successfully'
+            });
+        }
+    );
+});
+
+// =========================================================
+// FRONTEND SERVING / SPA FALLBACK
+// =========================================================
+
+const indexPath = path.join(distPath, 'index.html');
+
+app.get('*', (req, res) => {
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send('Frontend build not found. Please run the build script (npm run build) to generate the dist folder.');
+    }
+});
 
 // =========================================================
 // START SERVER
 // =========================================================
 
-app.listen(
-    PORT,
-    () => {
-        console.log(
-            `Server running on http://localhost:${PORT}`
-        );
-    }
-);
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
