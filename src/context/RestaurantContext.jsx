@@ -13,23 +13,19 @@ API CONFIGURATION
 =========================================================
 
 LOCAL:
-Create .env in your frontend root:
+Uses:
+http://localhost:5005
 
-VITE_API_BASE_URL=http://localhost:5005
+PRODUCTION / NETLIFY:
+Uses:
+https://hotel-management-wai7.onrender.com
 
-NETLIFY:
-Add this environment variable in Netlify:
-
-VITE_API_BASE_URL=https://hotel-management-wai7.onrender.com
-
-IMPORTANT:
-Do not put quotes around the URL.
-Do not add / at the end.
+The ternary automatically selects the correct URL.
+=========================================================
 */
 
-const API_BASE_URL = import.meta.env.PROD
-  ? 'https://hotel-management-wai7.onrender.com'
-  : 'http://localhost:5005';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005';
+
 /*
 =========================================================
 INITIAL TABLES
@@ -536,10 +532,6 @@ export const RestaurantProvider = ({
         'Error fetching backend data:',
         error
       );
-
-      /*
-      FALLBACK DATA
-      */
 
       setReservations(
         initialReservations
