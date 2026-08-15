@@ -1,801 +1,1658 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect
+} from 'react';
+
 import { subHours, addDays } from 'date-fns';
 
-const API_BASE_URL = 'https://hotel-management-wai7.onrender.com';
+/*
+=========================================================
+API CONFIGURATION
+=========================================================
+
+LOCAL:
+Create .env in your frontend root:
+
+VITE_API_BASE_URL=http://localhost:5005
+
+NETLIFY:
+Add this environment variable in Netlify:
+
+VITE_API_BASE_URL=https://hotel-management-wai7.onrender.com
+
+IMPORTANT:
+Do not put quotes around the URL.
+Do not add / at the end.
+*/
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || '';
+
+/*
+=========================================================
+INITIAL TABLES
+=========================================================
+*/
 
 const initialTables = [
-  { id: 'T1', number: '1', capacity: 2, status: 'Available', type: 'Window', location: 'Main Dining' },
-  { id: 'T2', number: '2', capacity: 2, status: 'Available', type: 'Standard', location: 'Main Dining' },
-  { id: 'T3', number: '3', capacity: 4, status: 'Available', type: 'Booth', location: 'Main Dining' },
-  { id: 'T4', number: '4', capacity: 4, status: 'Available', type: 'Booth', location: 'Main Dining' },
-  { id: 'T5', number: '5', capacity: 6, status: 'Available', type: 'Round', location: 'Main Dining' },
-  { id: 'T6', number: '6', capacity: 2, status: 'Available', type: 'Bar', location: 'Bar Area' },
-  { id: 'T7', number: '7', capacity: 2, status: 'Available', type: 'Bar', location: 'Bar Area' },
-  { id: 'T8', number: '8', capacity: 8, status: 'Available', type: 'Private', location: 'Private Room' },
-  { id: 'T9', number: '9', capacity: 4, status: 'Available', type: 'Patio', location: 'Outdoor' },
-  { id: 'T10', number: '10', capacity: 4, status: 'Available', type: 'Patio', location: 'Outdoor' },
+  {
+    id: 'T1',
+    number: '1',
+    capacity: 2,
+    status: 'Available',
+    type: 'Window',
+    location: 'Main Dining'
+  },
+  {
+    id: 'T2',
+    number: '2',
+    capacity: 2,
+    status: 'Available',
+    type: 'Standard',
+    location: 'Main Dining'
+  },
+  {
+    id: 'T3',
+    number: '3',
+    capacity: 4,
+    status: 'Available',
+    type: 'Booth',
+    location: 'Main Dining'
+  },
+  {
+    id: 'T4',
+    number: '4',
+    capacity: 4,
+    status: 'Available',
+    type: 'Booth',
+    location: 'Main Dining'
+  },
+  {
+    id: 'T5',
+    number: '5',
+    capacity: 6,
+    status: 'Available',
+    type: 'Round',
+    location: 'Main Dining'
+  },
+  {
+    id: 'T6',
+    number: '6',
+    capacity: 2,
+    status: 'Available',
+    type: 'Bar',
+    location: 'Bar Area'
+  },
+  {
+    id: 'T7',
+    number: '7',
+    capacity: 2,
+    status: 'Available',
+    type: 'Bar',
+    location: 'Bar Area'
+  },
+  {
+    id: 'T8',
+    number: '8',
+    capacity: 8,
+    status: 'Available',
+    type: 'Private',
+    location: 'Private Room'
+  },
+  {
+    id: 'T9',
+    number: '9',
+    capacity: 4,
+    status: 'Available',
+    type: 'Patio',
+    location: 'Outdoor'
+  },
+  {
+    id: 'T10',
+    number: '10',
+    capacity: 4,
+    status: 'Available',
+    type: 'Patio',
+    location: 'Outdoor'
+  }
 ];
 
+/*
+=========================================================
+INITIAL MENU
+=========================================================
+*/
+
 const initialMenu = [
-  { id: 'M1', name: 'Truffle Arancini', description: 'Crispy risotto balls, black truffle, fontina', price: 18, category: 'Starters', dietary: ['Vegetarian'], image: '/images/menu_arancini_1783794216460.png' },
-  { id: 'M2', name: 'Wagyu Beef Tartare', description: 'Quail egg, capers, toasted brioche', price: 26, category: 'Starters', dietary: [], image: '/images/menu_tartare_1783794747676.png' },
-  { id: 'M3', name: 'Pan-Seared Scallops', description: 'Cauliflower purée, pancetta crisp, brown butter', price: 38, category: 'Mains', dietary: ['Gluten-Free'], image: '/images/menu_scallops_1783794234659.png' },
-  { id: 'M4', name: 'Dry-Aged Ribeye', description: '24oz bone-in, roasted garlic, chimichurri', price: 85, category: 'Mains', dietary: ['Gluten-Free'], image: '/images/menu_ribeye_1783794197166.png' },
-  { id: 'M5', name: 'Mushroom Risotto', description: 'Wild mushrooms, parmesan foam, truffle oil', price: 32, category: 'Mains', dietary: ['Vegetarian', 'Gluten-Free'], image: '/images/menu_risotto_1783794759409.png' },
-  { id: 'M6', name: 'Dark Chocolate Tart', description: 'Sea salt, raspberry coulis, vanilla bean gelato', price: 14, category: 'Desserts', dietary: ['Vegetarian'], image: '/images/menu_tart_1783794768451.png' },
-  { id: 'M7', name: 'Burrata & Heirloom Tomato', description: 'Aged balsamic, basil oil, micro greens', price: 22, category: 'Starters', dietary: ['Vegetarian', 'Gluten-Free'], image: '/images/menu_burrata_1783794777906.png' },
-  { id: 'M8', name: 'Miso Glazed Black Cod', description: 'Bok choy, ginger dashi, enoki mushrooms', price: 42, category: 'Mains', dietary: ['Gluten-Free'], image: '/images/menu_cod_1783794788575.png' },
-  { id: 'M9', name: 'Lemon Basil Panna Cotta', description: 'Fresh berries, almond crumble, mint', price: 12, category: 'Desserts', dietary: ['Vegetarian'], image: '/images/menu_pannacotta_1783794797930.png' },
-  { id: 'M10', name: 'Aura Signature Martini', description: 'Vodka, dry vermouth, blue cheese olive', price: 18, category: 'Drinks', dietary: ['Vegan'], image: '/images/menu_martini_1783794807600.png' },
-  { id: 'M11', name: 'Smoked Old Fashioned', description: 'Bourbon, hickory smoke, orange peel', price: 20, category: 'Drinks', dietary: ['Vegan'], image: '/images/gallery_drinks_1783794249464.png' },
+  {
+    id: 'M1',
+    name: 'Truffle Arancini',
+    description:
+      'Crispy risotto balls, black truffle, fontina',
+    price: 18,
+    category: 'Starters',
+    dietary: ['Vegetarian'],
+    image:
+      '/images/menu_arancini_1783794216460.png'
+  },
+  {
+    id: 'M2',
+    name: 'Wagyu Beef Tartare',
+    description:
+      'Quail egg, capers, toasted brioche',
+    price: 26,
+    category: 'Starters',
+    dietary: [],
+    image:
+      '/images/menu_tartare_1783794747676.png'
+  },
+  {
+    id: 'M3',
+    name: 'Pan-Seared Scallops',
+    description:
+      'Cauliflower purée, pancetta crisp, brown butter',
+    price: 38,
+    category: 'Mains',
+    dietary: ['Gluten-Free'],
+    image:
+      '/images/menu_scallops_1783794234659.png'
+  },
+  {
+    id: 'M4',
+    name: 'Dry-Aged Ribeye',
+    description:
+      '24oz bone-in, roasted garlic, chimichurri',
+    price: 85,
+    category: 'Mains',
+    dietary: ['Gluten-Free'],
+    image:
+      '/images/menu_ribeye_1783794197166.png'
+  },
+  {
+    id: 'M5',
+    name: 'Mushroom Risotto',
+    description:
+      'Wild mushrooms, parmesan foam, truffle oil',
+    price: 32,
+    category: 'Mains',
+    dietary: [
+      'Vegetarian',
+      'Gluten-Free'
+    ],
+    image:
+      '/images/menu_risotto_1783794759409.png'
+  },
+  {
+    id: 'M6',
+    name: 'Dark Chocolate Tart',
+    description:
+      'Sea salt, raspberry coulis, vanilla bean gelato',
+    price: 14,
+    category: 'Desserts',
+    dietary: ['Vegetarian'],
+    image:
+      '/images/menu_tart_1783794768451.png'
+  },
+  {
+    id: 'M7',
+    name: 'Burrata & Heirloom Tomato',
+    description:
+      'Aged balsamic, basil oil, micro greens',
+    price: 22,
+    category: 'Starters',
+    dietary: [
+      'Vegetarian',
+      'Gluten-Free'
+    ],
+    image:
+      '/images/menu_burrata_1783794777906.png'
+  },
+  {
+    id: 'M8',
+    name: 'Miso Glazed Black Cod',
+    description:
+      'Bok choy, ginger dashi, enoki mushrooms',
+    price: 42,
+    category: 'Mains',
+    dietary: ['Gluten-Free'],
+    image:
+      '/images/menu_cod_1783794788575.png'
+  },
+  {
+    id: 'M9',
+    name: 'Lemon Basil Panna Cotta',
+    description:
+      'Fresh berries, almond crumble, mint',
+    price: 12,
+    category: 'Desserts',
+    dietary: ['Vegetarian'],
+    image:
+      '/images/menu_pannacotta_1783794797930.png'
+  },
+  {
+    id: 'M10',
+    name: 'Aura Signature Martini',
+    description:
+      'Vodka, dry vermouth, blue cheese olive',
+    price: 18,
+    category: 'Drinks',
+    dietary: ['Vegan'],
+    image:
+      '/images/menu_martini_1783794807600.png'
+  },
+  {
+    id: 'M11',
+    name: 'Smoked Old Fashioned',
+    description:
+      'Bourbon, hickory smoke, orange peel',
+    price: 20,
+    category: 'Drinks',
+    dietary: ['Vegan'],
+    image:
+      '/images/gallery_drinks_1783794249464.png'
+  }
 ];
+
+/*
+=========================================================
+INITIAL RESERVATIONS
+=========================================================
+*/
 
 const now = new Date();
 
 const initialReservations = [
-  { id: 'R1001', guestName: 'Eleanor Vance', partySize: 2, tableId: 'T2', date: now, time: '19:00', status: 'Seated' },
-  { id: 'R1002', guestName: 'Hugh Crain', partySize: 4, tableId: 'T10', date: now, time: '19:30', status: 'Seated' },
-  { id: 'R1003', guestName: 'Theodora', partySize: 6, tableId: null, date: now, time: '20:00', status: 'Confirmed' },
-  { id: 'R1004', guestName: 'Luke Sanderson', partySize: 2, tableId: null, date: addDays(now, 1), time: '18:30', status: 'Confirmed' },
-  { id: 'R1005', guestName: 'Dr. Montague', partySize: 8, tableId: 'T8', date: subHours(now, 2), time: '17:00', status: 'Completed' },
+  {
+    id: 'R1001',
+    guestName: 'Eleanor Vance',
+    partySize: 2,
+    tableId: 'T2',
+    date: now,
+    time: '19:00',
+    status: 'Seated'
+  },
+  {
+    id: 'R1002',
+    guestName: 'Hugh Crain',
+    partySize: 4,
+    tableId: 'T10',
+    date: now,
+    time: '19:30',
+    status: 'Seated'
+  },
+  {
+    id: 'R1003',
+    guestName: 'Theodora',
+    partySize: 6,
+    tableId: null,
+    date: now,
+    time: '20:00',
+    status: 'Confirmed'
+  },
+  {
+    id: 'R1004',
+    guestName: 'Luke Sanderson',
+    partySize: 2,
+    tableId: null,
+    date: addDays(now, 1),
+    time: '18:30',
+    status: 'Confirmed'
+  },
+  {
+    id: 'R1005',
+    guestName: 'Dr. Montague',
+    partySize: 8,
+    tableId: 'T8',
+    date: subHours(now, 2),
+    time: '17:00',
+    status: 'Completed'
+  }
 ];
+
+/*
+=========================================================
+CONTEXT
+=========================================================
+*/
 
 const RestaurantContext = createContext();
 
-export const RestaurantProvider = ({ children }) => {
-  const [tables, setTables] = useState(initialTables);
-  const [menuItems] = useState(initialMenu);
-  const [reservations, setReservations] = useState([]);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [cart, setCart] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [loungeBookings, setLoungeBookings] = useState([]);
-  const [customer, setCustomer] = useState(null);
-  const [staffUser, setStaffUser] = useState(null);
+/*
+=========================================================
+RESTAURANT PROVIDER
+=========================================================
+*/
 
-  const [analytics, setAnalytics] = useState({
-    totalRevenue: 0,
-    netProfit: 0,
-    orderCount: 0,
-    reservationCount: 0,
-    loungeCount: 0,
-    totalCustomers: 0
-  });
+export const RestaurantProvider = ({
+  children
+}) => {
+
+  const [tables, setTables] =
+    useState(initialTables);
+
+  const [menuItems] =
+    useState(initialMenu);
+
+  const [reservations, setReservations] =
+    useState([]);
+
+  const [authModalOpen, setAuthModalOpen] =
+    useState(false);
+
+  const [cart, setCart] =
+    useState([]);
+
+  const [orders, setOrders] =
+    useState([]);
+
+  const [loungeBookings, setLoungeBookings] =
+    useState([]);
+
+  const [customer, setCustomer] =
+    useState(null);
+
+  const [staffUser, setStaffUser] =
+    useState(null);
+
+  const [analytics, setAnalytics] =
+    useState({
+      totalRevenue: 0,
+      netProfit: 0,
+      orderCount: 0,
+      reservationCount: 0,
+      loungeCount: 0,
+      totalCustomers: 0
+    });
+
+  /*
+  ========================================================
+  LOAD SAVED LOGIN DATA
+  ========================================================
+  */
 
   useEffect(() => {
-    const savedCustomer = localStorage.getItem('customerData');
+
+    const savedCustomer =
+      localStorage.getItem(
+        'customerData'
+      );
 
     if (savedCustomer) {
-      setCustomer(JSON.parse(savedCustomer));
+      setCustomer(
+        JSON.parse(savedCustomer)
+      );
     }
 
-    const savedStaff = localStorage.getItem('staffData');
+    const savedStaff =
+      localStorage.getItem(
+        'staffData'
+      );
 
     if (savedStaff) {
-      setStaffUser(JSON.parse(savedStaff));
+      setStaffUser(
+        JSON.parse(savedStaff)
+      );
     }
+
   }, []);
 
+  /*
+  ========================================================
+  FETCH BACKEND DATA
+  ========================================================
+  */
+
   const fetchBackendData = async () => {
+
     try {
-      const [resReq, loungeReq, ordersReq] = await Promise.all([
-        fetch('/api/reservations'),
-        fetch('/api/lounge-bookings'),
-        fetch('/api/orders')
+
+      const [
+        resReq,
+        loungeReq,
+        ordersReq
+      ] = await Promise.all([
+
+        fetch(
+          `${API_BASE_URL}/api/reservations`
+        ),
+
+        fetch(
+          `${API_BASE_URL}/api/lounge-bookings`
+        ),
+
+        fetch(
+          `${API_BASE_URL}/api/orders`
+        )
+
       ]);
 
-      const resAnalytics = await fetch('/api/analytics');
+      /*
+      ANALYTICS
+      */
+
+      const resAnalytics =
+        await fetch(
+          `${API_BASE_URL}/api/analytics`
+        );
 
       if (resAnalytics.ok) {
-        const dataAnalytics = await resAnalytics.json();
-        setAnalytics(dataAnalytics);
+
+        const dataAnalytics =
+          await resAnalytics.json();
+
+        setAnalytics(
+          dataAnalytics
+        );
       }
+
+      /*
+      RESERVATIONS
+      */
 
       if (resReq.ok) {
-        const resData = await resReq.json();
 
-        setReservations(resData);
+        const resData =
+          await resReq.json();
 
-        setTables(prevTables => {
-          return prevTables.map(table => {
-            const isSeated = resData.some(
-              r => r.tableId === table.id && r.status === 'Seated'
+        setReservations(
+          resData
+        );
+
+        setTables(
+          prevTables => {
+
+            return prevTables.map(
+              table => {
+
+                const isSeated =
+                  resData.some(
+                    r =>
+                      r.tableId ===
+                        table.id &&
+                      r.status ===
+                        'Seated'
+                  );
+
+                if (isSeated) {
+
+                  return {
+                    ...table,
+                    status: 'Seated'
+                  };
+
+                }
+
+                if (
+                  table.status ===
+                  'Dirty'
+                ) {
+
+                  return table;
+
+                }
+
+                return {
+                  ...table,
+                  status: 'Available'
+                };
+
+              }
             );
 
-            if (isSeated) return { ...table, status: 'Seated' };
+          }
+        );
 
-            if (table.status === 'Dirty') return table;
-
-            return { ...table, status: 'Available' };
-          });
-        });
       }
+
+      /*
+      LOUNGE BOOKINGS
+      */
 
       if (loungeReq.ok) {
-        setLoungeBookings(await loungeReq.json());
+
+        setLoungeBookings(
+          await loungeReq.json()
+        );
+
       }
 
+      /*
+      ORDERS
+      */
+
       if (ordersReq.ok) {
-        setOrders(await ordersReq.json());
+
+        setOrders(
+          await ordersReq.json()
+        );
+
       }
 
     } catch (error) {
-      console.error('Error fetching backend data:', error);
-      setReservations(initialReservations);
+
+      console.error(
+        'Error fetching backend data:',
+        error
+      );
+
+      /*
+      FALLBACK DATA
+      */
+
+      setReservations(
+        initialReservations
+      );
+
     }
+
   };
+
+  /*
+  ========================================================
+  INITIAL BACKEND FETCH
+  ========================================================
+  */
 
   useEffect(() => {
+
     fetchBackendData();
+
   }, []);
 
-  const addToCart = (item) => {
+  /*
+  ========================================================
+  CART FUNCTIONS
+  ========================================================
+  */
+
+  const addToCart = item => {
+
     setCart(prev => {
-      const existing = prev.find(i => i.id === item.id);
+
+      const existing =
+        prev.find(
+          i => i.id === item.id
+        );
 
       if (existing) {
+
         return prev.map(i =>
           i.id === item.id
-            ? { ...i, quantity: i.quantity + 1 }
+            ? {
+                ...i,
+                quantity:
+                  i.quantity + 1
+              }
             : i
         );
+
       }
 
-      return [...prev, { ...item, quantity: 1 }];
+      return [
+        ...prev,
+        {
+          ...item,
+          quantity: 1
+        }
+      ];
+
     });
+
   };
 
-  const removeFromCart = (itemId) => {
-    setCart(prev => prev.filter(i => i.id !== itemId));
-  };
+  const removeFromCart =
+    itemId => {
 
-  const updateQuantity = (itemId, quantity) => {
-    setCart(prev =>
-      prev.map(i =>
-        i.id === itemId
-          ? { ...i, quantity }
-          : i
-      )
-    );
-  };
+      setCart(
+        prev =>
+          prev.filter(
+            i => i.id !== itemId
+          )
+      );
 
-  const clearCart = () => setCart([]);
+    };
+
+  const updateQuantity =
+    (itemId, quantity) => {
+
+      setCart(prev =>
+        prev.map(i =>
+          i.id === itemId
+            ? {
+                ...i,
+                quantity
+              }
+            : i
+        )
+      );
+
+    };
+
+  const clearCart = () =>
+    setCart([]);
+
+  /*
+  ========================================================
+  PLACE CUSTOMER ORDER
+  ========================================================
+  */
 
   const placeOrder = async () => {
+
     if (!customer) {
+
       setAuthModalOpen(true);
-      throw new Error("Must be logged in to place an order");
+
+      throw new Error(
+        'Must be logged in to place an order'
+      );
+
     }
 
-    const cartTotal = cart.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-
-    const activeSeatedRes = reservations.find(r =>
-      (
-        r.customerId === customer.id ||
-        r.guestName.toLowerCase() === customer.name.toLowerCase()
-      ) &&
-      r.status === 'Seated'
-    );
-
-    const tableId = activeSeatedRes
-      ? activeSeatedRes.tableId
-      : null;
-
-    try {
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          total: cartTotal,
-          items: cart,
-          customerId: customer?.id || null,
-          tableId: tableId
-        })
-      });
-
-      if (response.ok) {
-        clearCart();
-        fetchBackendData();
-        return true;
-      }
-
-      return false;
-
-    } catch (e) {
-      console.error(e);
-      return false;
-    }
-  };
-
-  const fetchActiveTableOrder = async (tableId) => {
-    try {
-      const res = await fetch(
-        `/api/orders/active-table/${tableId}`
+    const cartTotal =
+      cart.reduce(
+        (sum, item) =>
+          sum +
+          item.price *
+            item.quantity,
+        0
       );
 
-      if (res.ok) {
-        return await res.json();
-      }
-
-      return null;
-
-    } catch (e) {
-      console.error(
-        "Failed to fetch active table order:",
-        e
-      );
-
-      return null;
-    }
-  };
-
-  const createTableOrder = async (
-    tableId,
-    items,
-    customerId = null
-  ) => {
-    const total = items.reduce(
-      (sum, item) =>
-        sum + item.price * item.quantity,
-      0
-    );
-
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          total,
-          items,
-          customerId,
-          tableId
-        })
-      });
-
-      if (res.ok) {
-        fetchBackendData();
-        return await res.json();
-      }
-
-      return null;
-
-    } catch (e) {
-      console.error(
-        "Failed to create table order:",
-        e
-      );
-
-      return null;
-    }
-  };
-
-  const updateTableOrderItems = async (
-    orderId,
-    items
-  ) => {
-    const total = items.reduce(
-      (sum, item) =>
-        sum + item.price * item.quantity,
-      0
-    );
-
-    try {
-      const res = await fetch(
-        `/api/orders/${orderId}/items`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            total,
-            items
-          })
-        }
-      );
-
-      if (res.ok) {
-        fetchBackendData();
-        return await res.json();
-      }
-
-      return null;
-
-    } catch (e) {
-      console.error(
-        "Failed to update table order items:",
-        e
-      );
-
-      return null;
-    }
-  };
-
-  const settleTableOrder = async (
-    orderId,
-    tableId
-  ) => {
-    try {
-      const orderRes = await fetch(
-        `/api/orders/${orderId}/status`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            status: 'Completed'
-          })
-        }
-      );
-
-      if (!orderRes.ok) return false;
-
-      const activeRes = reservations.find(
+    const activeSeatedRes =
+      reservations.find(
         r =>
-          r.tableId === tableId &&
+          (
+            r.customerId ===
+              customer.id ||
+            (
+              r.guestName &&
+              customer.name &&
+              r.guestName
+                .toLowerCase() ===
+                customer.name
+                  .toLowerCase()
+            )
+          ) &&
           r.status === 'Seated'
       );
 
-      if (activeRes) {
-        await updateReservationStatus(
-          activeRes.id,
-          'Completed',
-          tableId
+    const tableId =
+      activeSeatedRes
+        ? activeSeatedRes.tableId
+        : null;
+
+    try {
+
+      const response =
+        await fetch(
+          `${API_BASE_URL}/api/orders`,
+          {
+            method: 'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json'
+            },
+
+            body: JSON.stringify({
+              total: cartTotal,
+              items: cart,
+              customerId:
+                customer?.id ||
+                null,
+              tableId
+            })
+          }
         );
+
+      if (response.ok) {
+
+        clearCart();
+
+        await fetchBackendData();
+
+        return true;
+
       }
 
-      updateTableStatus(
-        tableId,
-        'Dirty'
-      );
+      return false;
 
-      fetchBackendData();
+    } catch (error) {
 
-      return true;
-
-    } catch (e) {
       console.error(
-        "Failed to settle table order:",
-        e
+        'Failed to place order:',
+        error
       );
 
       return false;
+
     }
+
   };
 
-  const updateOrderStatus = async (
-    orderId,
-    status
-  ) => {
-    try {
-      const response = await fetch(
-        `/api/orders/${orderId}/status`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ status })
-        }
-      );
+  /*
+  ========================================================
+  FETCH ACTIVE TABLE ORDER
+  ========================================================
+  */
 
-      if (response.ok) {
-        fetchBackendData();
-      }
+  const fetchActiveTableOrder =
+    async tableId => {
 
-    } catch (e) {
-      console.error(
-        'Failed to update order status',
-        e
-      );
-    }
-  };
+      try {
 
-  const updateTableStatus = (
-    tableId,
-    newStatus
-  ) => {
-    setTables(
-      tables.map(t =>
-        t.id === tableId
-          ? { ...t, status: newStatus }
-          : t
-      )
-    );
-  };
+        const res =
+          await fetch(
+            `${API_BASE_URL}/api/orders/active-table/${tableId}`
+          );
 
-  const addReservation = async (
-    reservation
-  ) => {
-    try {
-      const response = await fetch(
-        '/api/reservations',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            ...reservation,
-            customerId: customer?.id || null
-          })
-        }
-      );
+        if (res.ok) {
 
-      if (response.ok) {
-        fetchBackendData();
-      }
+          return await res.json();
 
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const addLoungeBooking = async (
-    booking
-  ) => {
-    try {
-      const response = await fetch(
-        '/api/lounge-bookings',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(booking)
-        }
-      );
-
-      if (response.ok) {
-        fetchBackendData();
-      }
-
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const updateReservationStatus = async (
-    reservationId,
-    newStatus,
-    tableId = null
-  ) => {
-
-    setReservations(
-      reservations.map(res => {
-        if (res.id === reservationId) {
-          const updated = {
-            ...res,
-            status: newStatus
-          };
-
-          if (tableId !== null) {
-            updated.tableId = tableId;
-          }
-
-          return updated;
         }
 
-        return res;
-      })
-    );
+        return null;
 
-    const resObj = reservations.find(
-      r => r.id === reservationId
-    );
+      } catch (error) {
 
-    const targetTableId =
-      tableId !== null
-        ? tableId
-        : resObj?.tableId;
-
-    if (targetTableId) {
-      if (newStatus === 'Seated') {
-        updateTableStatus(
-          targetTableId,
-          'Seated'
+        console.error(
+          'Failed to fetch active table order:',
+          error
         );
+
+        return null;
+
       }
 
-      if (newStatus === 'Completed') {
+    };
+
+  /*
+  ========================================================
+  CREATE TABLE ORDER
+  ========================================================
+  */
+
+  const createTableOrder =
+    async (
+      tableId,
+      items,
+      customerId = null
+    ) => {
+
+      const total =
+        items.reduce(
+          (sum, item) =>
+            sum +
+            item.price *
+              item.quantity,
+          0
+        );
+
+      try {
+
+        const res =
+          await fetch(
+            `${API_BASE_URL}/api/orders`,
+            {
+              method: 'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json'
+              },
+
+              body: JSON.stringify({
+                total,
+                items,
+                customerId,
+                tableId
+              })
+            }
+          );
+
+        if (res.ok) {
+
+          await fetchBackendData();
+
+          return await res.json();
+
+        }
+
+        return null;
+
+      } catch (error) {
+
+        console.error(
+          'Failed to create table order:',
+          error
+        );
+
+        return null;
+
+      }
+
+    };
+
+  /*
+  ========================================================
+  UPDATE TABLE ORDER ITEMS
+  ========================================================
+  */
+
+  const updateTableOrderItems =
+    async (
+      orderId,
+      items
+    ) => {
+
+      const total =
+        items.reduce(
+          (sum, item) =>
+            sum +
+            item.price *
+              item.quantity,
+          0
+        );
+
+      try {
+
+        const res =
+          await fetch(
+            `${API_BASE_URL}/api/orders/${orderId}/items`,
+            {
+              method: 'PUT',
+
+              headers: {
+                'Content-Type':
+                  'application/json'
+              },
+
+              body: JSON.stringify({
+                total,
+                items
+              })
+            }
+          );
+
+        if (res.ok) {
+
+          await fetchBackendData();
+
+          return await res.json();
+
+        }
+
+        return null;
+
+      } catch (error) {
+
+        console.error(
+          'Failed to update table order items:',
+          error
+        );
+
+        return null;
+
+      }
+
+    };
+
+  /*
+  ========================================================
+  UPDATE ORDER STATUS
+  ========================================================
+  */
+
+  const updateOrderStatus =
+    async (
+      orderId,
+      status
+    ) => {
+
+      try {
+
+        const response =
+          await fetch(
+            `${API_BASE_URL}/api/orders/${orderId}/status`,
+            {
+              method: 'PUT',
+
+              headers: {
+                'Content-Type':
+                  'application/json'
+              },
+
+              body: JSON.stringify({
+                status
+              })
+            }
+          );
+
+        if (response.ok) {
+
+          await fetchBackendData();
+
+        }
+
+      } catch (error) {
+
+        console.error(
+          'Failed to update order status:',
+          error
+        );
+
+      }
+
+    };
+
+  /*
+  ========================================================
+  UPDATE TABLE STATUS
+  ========================================================
+  */
+
+  const updateTableStatus =
+    (
+      tableId,
+      newStatus
+    ) => {
+
+      setTables(
+        prevTables =>
+          prevTables.map(
+            table =>
+              table.id === tableId
+                ? {
+                    ...table,
+                    status:
+                      newStatus
+                  }
+                : table
+          )
+      );
+
+    };
+
+  /*
+  ========================================================
+  SETTLE TABLE ORDER
+  ========================================================
+  */
+
+  const settleTableOrder =
+    async (
+      orderId,
+      tableId
+    ) => {
+
+      try {
+
+        const orderRes =
+          await fetch(
+            `${API_BASE_URL}/api/orders/${orderId}/status`,
+            {
+              method: 'PUT',
+
+              headers: {
+                'Content-Type':
+                  'application/json'
+              },
+
+              body: JSON.stringify({
+                status:
+                  'Completed'
+              })
+            }
+          );
+
+        if (!orderRes.ok) {
+
+          return false;
+
+        }
+
+        const activeRes =
+          reservations.find(
+            r =>
+              r.tableId ===
+                tableId &&
+              r.status ===
+                'Seated'
+          );
+
+        if (activeRes) {
+
+          await updateReservationStatus(
+            activeRes.id,
+            'Completed',
+            tableId
+          );
+
+        }
+
         updateTableStatus(
-          targetTableId,
+          tableId,
           'Dirty'
         );
+
+        await fetchBackendData();
+
+        return true;
+
+      } catch (error) {
+
+        console.error(
+          'Failed to settle table order:',
+          error
+        );
+
+        return false;
+
       }
+
+    };
+
+  /*
+  ========================================================
+  ADD RESERVATION
+  ========================================================
+  */
+
+  const addReservation =
+    async reservation => {
+
+      try {
+
+        const response =
+          await fetch(
+            `${API_BASE_URL}/api/reservations`,
+            {
+              method: 'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json'
+              },
+
+              body: JSON.stringify({
+                ...reservation,
+                customerId:
+                  customer?.id ||
+                  null
+              })
+            }
+          );
+
+        if (response.ok) {
+
+          await fetchBackendData();
+
+        }
+
+      } catch (error) {
+
+        console.error(
+          'Failed to add reservation:',
+          error
+        );
+
+      }
+
+    };
+
+  /*
+  ========================================================
+  ADD LOUNGE BOOKING
+  ========================================================
+  */
+
+  const addLoungeBooking =
+    async booking => {
+
+      try {
+
+        const response =
+          await fetch(
+            `${API_BASE_URL}/api/lounge-bookings`,
+            {
+              method: 'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json'
+              },
+
+              body: JSON.stringify(
+                booking
+              )
+            }
+          );
+
+        if (response.ok) {
+
+          await fetchBackendData();
+
+        }
+
+      } catch (error) {
+
+        console.error(
+          'Failed to add lounge booking:',
+          error
+        );
+
+      }
+
+    };
+
+  /*
+  ========================================================
+  UPDATE RESERVATION STATUS
+  ========================================================
+  */
+
+  const updateReservationStatus =
+    async (
+      reservationId,
+      newStatus,
+      tableId = null
+    ) => {
+
+      setReservations(
+        prevReservations =>
+          prevReservations.map(
+            res => {
+
+              if (
+                res.id !==
+                reservationId
+              ) {
+
+                return res;
+
+              }
+
+              const updated = {
+                ...res,
+                status:
+                  newStatus
+              };
+
+              if (
+                tableId !== null
+              ) {
+
+                updated.tableId =
+                  tableId;
+
+              }
+
+              return updated;
+
+            }
+          )
+      );
+
+      const resObj =
+        reservations.find(
+          r =>
+            r.id ===
+            reservationId
+        );
+
+      const targetTableId =
+        tableId !== null
+          ? tableId
+          : resObj?.tableId;
+
+      if (targetTableId) {
+
+        if (
+          newStatus ===
+          'Seated'
+        ) {
+
+          updateTableStatus(
+            targetTableId,
+            'Seated'
+          );
+
+        }
+
+        if (
+          newStatus ===
+          'Completed'
+        ) {
+
+          updateTableStatus(
+            targetTableId,
+            'Dirty'
+          );
+
+        }
+
+        if (
+          newStatus ===
+            'Canceled' &&
+          resObj?.status ===
+            'Seated'
+        ) {
+
+          updateTableStatus(
+            targetTableId,
+            'Dirty'
+          );
+
+        }
+
+      }
+
+      try {
+
+        const response =
+          await fetch(
+            `${API_BASE_URL}/api/reservations/${reservationId}/status`,
+            {
+              method: 'PUT',
+
+              headers: {
+                'Content-Type':
+                  'application/json'
+              },
+
+              body: JSON.stringify({
+                status:
+                  newStatus,
+
+                tableId:
+                  tableId !== null
+                    ? tableId
+                    : undefined
+              })
+            }
+          );
+
+        if (response.ok) {
+
+          await fetchBackendData();
+
+        }
+
+      } catch (error) {
+
+        console.error(
+          'Failed to update reservation status:',
+          error
+        );
+
+      }
+
+    };
+
+  /*
+  ========================================================
+  CUSTOMER LOGIN
+  ========================================================
+  */
+
+  const loginCustomer =
+    async (
+      email,
+      password
+    ) => {
+
+      const res =
+        await fetch(
+          `${API_BASE_URL}/api/customers/login`,
+          {
+            method: 'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json'
+            },
+
+            body: JSON.stringify({
+              email,
+              password
+            })
+          }
+        );
+
+      let data;
+
+      const contentType =
+        res.headers.get(
+          'content-type'
+        );
 
       if (
-        newStatus === 'Canceled' &&
-        resObj?.status === 'Seated'
+        contentType &&
+        contentType.includes(
+          'application/json'
+        )
       ) {
-        updateTableStatus(
-          targetTableId,
-          'Dirty'
+
+        data =
+          await res.json();
+
+      } else {
+
+        const text =
+          await res.text();
+
+        console.error(
+          'Non-JSON response from server:',
+          text
         );
-      }
-    }
 
-    try {
-      const response = await fetch(
-        `/api/reservations/${reservationId}/status`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            status: newStatus,
-            tableId:
-              tableId !== null
-                ? tableId
-                : undefined
-          })
-        }
-      );
+        throw new Error(
+          'Server error: Did not receive JSON. The server might be down or misconfigured.'
+        );
 
-      if (response.ok) {
-        fetchBackendData();
       }
 
-    } catch (e) {
-      console.error(
-        'Failed to update reservation status',
-        e
-      );
-    }
-  };
+      if (!res.ok) {
 
-  const loginCustomer = async (
-    email,
-    password
-  ) => {
+        throw new Error(
+          data.error ||
+          'Login failed'
+        );
 
-    const res = await fetch(
-      '/api/customers/login',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email,
-          password
-        })
       }
-    );
 
-    let data;
+      setCustomer(data);
 
-    const contentType =
-      res.headers.get("content-type");
-
-    if (
-      contentType &&
-      contentType.includes("application/json")
-    ) {
-      data = await res.json();
-    } else {
-      const text = await res.text();
-
-      console.error(
-        "Non-JSON response from server:",
-        text
+      localStorage.setItem(
+        'customerData',
+        JSON.stringify(data)
       );
 
-      throw new Error(
-        "Server error: Did not receive JSON. The server might be down or misconfigured."
-      );
-    }
+    };
 
-    if (!res.ok) {
-      throw new Error(
-        data.error || 'Login failed'
-      );
-    }
+  /*
+  ========================================================
+  CUSTOMER REGISTER
+  ========================================================
+  */
 
-    setCustomer(data);
+  const registerCustomer =
+    async (
+      name,
+      email,
+      password
+    ) => {
 
-    localStorage.setItem(
-      'customerData',
-      JSON.stringify(data)
-    );
-  };
+      const res =
+        await fetch(
+          `${API_BASE_URL}/api/customers/register`,
+          {
+            method: 'POST',
 
-  const registerCustomer = async (
-    name,
-    email,
-    password
-  ) => {
+            headers: {
+              'Content-Type':
+                'application/json'
+            },
 
-    const res = await fetch(
-      '/api/customers/register',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password
-        })
+            body: JSON.stringify({
+              name,
+              email,
+              password
+            })
+          }
+        );
+
+      let data;
+
+      const contentType =
+        res.headers.get(
+          'content-type'
+        );
+
+      if (
+        contentType &&
+        contentType.includes(
+          'application/json'
+        )
+      ) {
+
+        data =
+          await res.json();
+
+      } else {
+
+        const text =
+          await res.text();
+
+        console.error(
+          'Non-JSON response from server:',
+          text
+        );
+
+        throw new Error(
+          'Server error: Did not receive JSON. The server might be down or misconfigured.'
+        );
+
       }
-    );
 
-    let data;
+      if (!res.ok) {
 
-    const contentType =
-      res.headers.get("content-type");
+        throw new Error(
+          data.error ||
+          'Registration failed'
+        );
 
-    if (
-      contentType &&
-      contentType.includes("application/json")
-    ) {
-      data = await res.json();
-    } else {
-      const text = await res.text();
+      }
 
-      console.error(
-        "Non-JSON response from server:",
-        text
+      setCustomer(data);
+
+      localStorage.setItem(
+        'customerData',
+        JSON.stringify(data)
       );
 
-      throw new Error(
-        "Server error: Did not receive JSON. The server might be down or misconfigured."
-      );
-    }
+    };
 
-    if (!res.ok) {
-      throw new Error(
-        data.error || 'Registration failed'
-      );
-    }
-
-    setCustomer(data);
-
-    localStorage.setItem(
-      'customerData',
-      JSON.stringify(data)
-    );
-  };
+  /*
+  ========================================================
+  CUSTOMER LOGOUT
+  ========================================================
+  */
 
   const logoutCustomer = () => {
+
     setCustomer(null);
 
     localStorage.removeItem(
       'customerData'
     );
+
   };
 
-  // ============================================
-  // STAFF LOGIN
-  // ============================================
+  /*
+  ========================================================
+  STAFF LOGIN
+  ========================================================
+  */
 
-  const loginStaff = async (
-    email,
-    password
-  ) => {
+  const loginStaff =
+    async (
+      email,
+      password
+    ) => {
 
-    const res = await fetch(
-      '/api/staff/login',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          password
-        })
+      const res =
+        await fetch(
+          `${API_BASE_URL}/api/staff/login`,
+          {
+            method: 'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json'
+            },
+
+            body: JSON.stringify({
+              email:
+                email
+                  .trim()
+                  .toLowerCase(),
+
+              password
+            })
+          }
+        );
+
+      let data;
+
+      const contentType =
+        res.headers.get(
+          'content-type'
+        );
+
+      if (
+        contentType &&
+        contentType.includes(
+          'application/json'
+        )
+      ) {
+
+        data =
+          await res.json();
+
+      } else {
+
+        const text =
+          await res.text();
+
+        console.error(
+          'Non-JSON response from server:',
+          text
+        );
+
+        throw new Error(
+          'Server error: Did not receive JSON.'
+        );
+
       }
-    );
 
-    let data;
+      if (!res.ok) {
 
-    const contentType =
-      res.headers.get("content-type");
+        throw new Error(
+          data.error ||
+          'Login failed'
+        );
 
-    if (
-      contentType &&
-      contentType.includes("application/json")
-    ) {
-      data = await res.json();
-    } else {
-      const text = await res.text();
-
-      console.error(
-        "Non-JSON response from server:",
-        text
-      );
-
-      throw new Error(
-        "Server error: Did not receive JSON."
-      );
-    }
-
-    if (!res.ok) {
-      throw new Error(
-        data.error || 'Login failed'
-      );
-    }
-
-    setStaffUser(data);
-
-    localStorage.setItem(
-      'staffData',
-      JSON.stringify(data)
-    );
-  };
-
-  const registerStaff = async (
-    name,
-    email,
-    password,
-    role
-  ) => {
-
-    const res = await fetch(
-      '/api/staff/register',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name,
-          email: email.trim().toLowerCase(),
-          password,
-          role
-        })
       }
-    );
 
-    let data;
+      setStaffUser(data);
 
-    const contentType =
-      res.headers.get("content-type");
-
-    if (
-      contentType &&
-      contentType.includes("application/json")
-    ) {
-      data = await res.json();
-    } else {
-      const text = await res.text();
-
-      console.error(
-        "Non-JSON response from server:",
-        text
+      localStorage.setItem(
+        'staffData',
+        JSON.stringify(data)
       );
 
-      throw new Error(
-        "Server error: Did not receive JSON."
+    };
+
+  /*
+  ========================================================
+  STAFF REGISTER
+  ========================================================
+  */
+
+  const registerStaff =
+    async (
+      name,
+      email,
+      password,
+      role
+    ) => {
+
+      const res =
+        await fetch(
+          `${API_BASE_URL}/api/staff/register`,
+          {
+            method: 'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json'
+            },
+
+            body: JSON.stringify({
+              name,
+              email:
+                email
+                  .trim()
+                  .toLowerCase(),
+              password,
+              role
+            })
+          }
+        );
+
+      let data;
+
+      const contentType =
+        res.headers.get(
+          'content-type'
+        );
+
+      if (
+        contentType &&
+        contentType.includes(
+          'application/json'
+        )
+      ) {
+
+        data =
+          await res.json();
+
+      } else {
+
+        const text =
+          await res.text();
+
+        console.error(
+          'Non-JSON response from server:',
+          text
+        );
+
+        throw new Error(
+          'Server error: Did not receive JSON.'
+        );
+
+      }
+
+      if (!res.ok) {
+
+        throw new Error(
+          data.error ||
+          'Registration failed'
+        );
+
+      }
+
+      setStaffUser(data);
+
+      localStorage.setItem(
+        'staffData',
+        JSON.stringify(data)
       );
-    }
 
-    if (!res.ok) {
-      throw new Error(
-        data.error || 'Registration failed'
-      );
-    }
+    };
 
-    setStaffUser(data);
-
-    localStorage.setItem(
-      'staffData',
-      JSON.stringify(data)
-    );
-  };
+  /*
+  ========================================================
+  STAFF LOGOUT
+  ========================================================
+  */
 
   const logoutStaff = () => {
+
     setStaffUser(null);
 
     localStorage.removeItem(
@@ -809,318 +1666,469 @@ export const RestaurantProvider = ({ children }) => {
     localStorage.removeItem(
       'staffAuth'
     );
+
   };
 
-  // ============================================
-  // CHANGE STAFF PASSWORD
-  // ============================================
+  /*
+  ========================================================
+  CHANGE STAFF PASSWORD
+  ========================================================
+  */
 
-  const changeStaffPassword = async (
-    email,
-    currentPassword,
-    newPassword
-  ) => {
+  const changeStaffPassword =
+    async (
+      email,
+      currentPassword,
+      newPassword
+    ) => {
 
-    const res = await fetch(
-      '/api/staff/change-password',
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email,
-          currentPassword,
-          newPassword
-        })
+      const res =
+        await fetch(
+          `${API_BASE_URL}/api/staff/change-password`,
+          {
+            method: 'PUT',
+
+            headers: {
+              'Content-Type':
+                'application/json'
+            },
+
+            body: JSON.stringify({
+              email,
+              currentPassword,
+              newPassword
+            })
+          }
+        );
+
+      let data;
+
+      const contentType =
+        res.headers.get(
+          'content-type'
+        );
+
+      if (
+        contentType &&
+        contentType.includes(
+          'application/json'
+        )
+      ) {
+
+        data =
+          await res.json();
+
+      } else {
+
+        const text =
+          await res.text();
+
+        console.error(
+          'Non-JSON response from server:',
+          text
+        );
+
+        throw new Error(
+          'Server error: Did not receive JSON.'
+        );
+
       }
-    );
 
-    let data;
+      if (!res.ok) {
 
-    const contentType =
-      res.headers.get("content-type");
+        throw new Error(
+          data.error ||
+          'Failed to change password'
+        );
 
-    if (
-      contentType &&
-      contentType.includes("application/json")
-    ) {
-      data = await res.json();
-    } else {
-      const text = await res.text();
-
-      console.error(
-        "Non-JSON response from server:",
-        text
-      );
-
-      throw new Error(
-        "Server error: Did not receive JSON."
-      );
-    }
-
-    if (!res.ok) {
-      throw new Error(
-        data.error ||
-        'Failed to change password'
-      );
-    }
-
-    return data;
-  };
-
-  // ============================================
-  // FORGOT PASSWORD - REQUEST OTP
-  // ============================================
-
-  const requestStaffPasswordReset = async (
-    email
-  ) => {
-
-    const normalizedEmail =
-      email.trim().toLowerCase();
-
-    const res = await fetch(
-      `${API_BASE_URL}/api/staff/forgot-password`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: normalizedEmail
-        })
       }
-    );
 
-    let data;
+      return data;
 
-    const contentType =
-      res.headers.get("content-type");
+    };
 
-    if (
-      contentType &&
-      contentType.includes("application/json")
-    ) {
-      data = await res.json();
-    } else {
-      const text = await res.text();
+  /*
+  ========================================================
+  FORGOT PASSWORD - REQUEST OTP
+  ========================================================
+  */
 
-      console.error(
-        "Non-JSON response from server:",
-        text
-      );
+  const requestStaffPasswordReset =
+    async email => {
 
-      throw new Error(
-        "Server error: Did not receive JSON."
-      );
-    }
+      const normalizedEmail =
+        email
+          .trim()
+          .toLowerCase();
 
-    if (!res.ok) {
-      throw new Error(
-        data.error ||
-        data.message ||
-        'Failed to request password reset'
-      );
-    }
+      const res =
+        await fetch(
+          `${API_BASE_URL}/api/staff/forgot-password`,
+          {
+            method: 'POST',
 
-    return data;
-  };
+            headers: {
+              'Content-Type':
+                'application/json'
+            },
 
-  // ============================================
-  // FORGOT PASSWORD - VERIFY OTP
-  // ============================================
+            body: JSON.stringify({
+              email:
+                normalizedEmail
+            })
+          }
+        );
 
-  const verifyStaffResetOtp = async (
-    email,
-    otp
-  ) => {
+      let data;
 
-    const normalizedEmail =
-      email.trim().toLowerCase();
+      const contentType =
+        res.headers.get(
+          'content-type'
+        );
 
-    const res = await fetch(
-      `${API_BASE_URL}/api/staff/verify-reset-otp`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: normalizedEmail,
-          otp: otp.trim()
-        })
+      if (
+        contentType &&
+        contentType.includes(
+          'application/json'
+        )
+      ) {
+
+        data =
+          await res.json();
+
+      } else {
+
+        const text =
+          await res.text();
+
+        console.error(
+          'Non-JSON response from server:',
+          text
+        );
+
+        throw new Error(
+          'Server error: Did not receive JSON.'
+        );
+
       }
-    );
 
-    let data;
+      if (!res.ok) {
 
-    const contentType =
-      res.headers.get("content-type");
+        throw new Error(
+          data.error ||
+          data.message ||
+          'Failed to request password reset'
+        );
 
-    if (
-      contentType &&
-      contentType.includes("application/json")
-    ) {
-      data = await res.json();
-    } else {
-      const text = await res.text();
-
-      console.error(
-        "Non-JSON response from server:",
-        text
-      );
-
-      throw new Error(
-        "Server error: Did not receive JSON."
-      );
-    }
-
-    if (!res.ok) {
-      throw new Error(
-        data.error ||
-        data.message ||
-        'Invalid reset code'
-      );
-    }
-
-    return data;
-  };
-
-  // ============================================
-  // FORGOT PASSWORD - RESET PASSWORD
-  // ============================================
-
-  const resetStaffPassword = async (
-    email,
-    newPassword
-  ) => {
-
-    const normalizedEmail =
-      email.trim().toLowerCase();
-
-    const res = await fetch(
-      `${API_BASE_URL}/api/staff/reset-password`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: normalizedEmail,
-          newPassword
-        })
       }
-    );
 
-    let data;
+      return data;
 
-    const contentType =
-      res.headers.get("content-type");
+    };
 
-    if (
-      contentType &&
-      contentType.includes("application/json")
-    ) {
-      data = await res.json();
-    } else {
-      const text = await res.text();
+  /*
+  ========================================================
+  FORGOT PASSWORD - VERIFY OTP
+  ========================================================
+  */
 
-      console.error(
-        "Non-JSON response from server:",
-        text
-      );
+  const verifyStaffResetOtp =
+    async (
+      email,
+      otp
+    ) => {
 
-      throw new Error(
-        "Server error: Did not receive JSON."
-      );
-    }
+      const normalizedEmail =
+        email
+          .trim()
+          .toLowerCase();
 
-    if (!res.ok) {
-      throw new Error(
-        data.error ||
-        data.message ||
-        'Failed to reset password'
-      );
-    }
+      const res =
+        await fetch(
+          `${API_BASE_URL}/api/staff/verify-reset-otp`,
+          {
+            method: 'POST',
 
-    return data;
-  };
+            headers: {
+              'Content-Type':
+                'application/json'
+            },
+
+            body: JSON.stringify({
+              email:
+                normalizedEmail,
+
+              otp:
+                otp.trim()
+            })
+          }
+        );
+
+      let data;
+
+      const contentType =
+        res.headers.get(
+          'content-type'
+        );
+
+      if (
+        contentType &&
+        contentType.includes(
+          'application/json'
+        )
+      ) {
+
+        data =
+          await res.json();
+
+      } else {
+
+        const text =
+          await res.text();
+
+        console.error(
+          'Non-JSON response from server:',
+          text
+        );
+
+        throw new Error(
+          'Server error: Did not receive JSON.'
+        );
+
+      }
+
+      if (!res.ok) {
+
+        throw new Error(
+          data.error ||
+          data.message ||
+          'Invalid reset code'
+        );
+
+      }
+
+      return data;
+
+    };
+
+  /*
+  ========================================================
+  FORGOT PASSWORD - RESET PASSWORD
+  ========================================================
+  */
+
+  const resetStaffPassword =
+    async (
+      email,
+      newPassword
+    ) => {
+
+      const normalizedEmail =
+        email
+          .trim()
+          .toLowerCase();
+
+      const res =
+        await fetch(
+          `${API_BASE_URL}/api/staff/reset-password`,
+          {
+            method: 'PUT',
+
+            headers: {
+              'Content-Type':
+                'application/json'
+            },
+
+            body: JSON.stringify({
+              email:
+                normalizedEmail,
+
+              newPassword
+            })
+          }
+        );
+
+      let data;
+
+      const contentType =
+        res.headers.get(
+          'content-type'
+        );
+
+      if (
+        contentType &&
+        contentType.includes(
+          'application/json'
+        )
+      ) {
+
+        data =
+          await res.json();
+
+      } else {
+
+        const text =
+          await res.text();
+
+        console.error(
+          'Non-JSON response from server:',
+          text
+        );
+
+        throw new Error(
+          'Server error: Did not receive JSON.'
+        );
+
+      }
+
+      if (!res.ok) {
+
+        throw new Error(
+          data.error ||
+          data.message ||
+          'Failed to reset password'
+        );
+
+      }
+
+      return data;
+
+    };
+
+  /*
+  ========================================================
+  DYNAMIC ANALYTICS
+  ========================================================
+  */
 
   const itemSales = {};
 
   orders.forEach(order => {
-    (order.items || []).forEach(item => {
 
-      if (!itemSales[item.name]) {
-        itemSales[item.name] = {
-          sales: 0,
-          revenue: 0
-        };
+    (order.items || []).forEach(
+      item => {
+
+        if (!itemSales[item.name]) {
+
+          itemSales[item.name] = {
+            sales: 0,
+            revenue: 0
+          };
+
+        }
+
+        itemSales[item.name]
+          .sales +=
+          item.quantity;
+
+        itemSales[item.name]
+          .revenue +=
+          item.price *
+          item.quantity;
+
       }
+    );
 
-      itemSales[item.name].sales +=
-        item.quantity;
-
-      itemSales[item.name].revenue +=
-        item.price * item.quantity;
-    });
   });
 
   const dynamicTopSellingItems =
     Object.keys(itemSales)
-      .map((name, idx) => ({
-        name,
-        sales: itemSales[name].sales,
-        revenue: itemSales[name].revenue,
-        fill: `hsl(var(--primary) / ${1 - (idx * 0.15)})`
-      }))
+      .map(
+        (name, idx) => ({
+          name,
+
+          sales:
+            itemSales[name]
+              .sales,
+
+          revenue:
+            itemSales[name]
+              .revenue,
+
+          fill:
+            `hsl(var(--primary) / ${
+              1 - idx * 0.15
+            })`
+        })
+      )
       .sort(
-        (a, b) => b.revenue - a.revenue
+        (a, b) =>
+          b.revenue -
+          a.revenue
       )
       .slice(0, 5);
+
+  /*
+  ========================================================
+  MONTHLY REVENUE
+  ========================================================
+  */
 
   const monthlyData = {};
 
   orders.forEach(order => {
 
-    const date = new Date(
-      order.createdAt || Date.now()
-    );
+    const date =
+      new Date(
+        order.createdAt ||
+        Date.now()
+      );
 
     const month =
       date.toLocaleString(
         'default',
-        { month: 'short' }
+        {
+          month: 'short'
+        }
       );
 
     if (!monthlyData[month]) {
+
       monthlyData[month] = {
         month,
         revenue: 0,
         profit: 0
       };
+
     }
 
-    monthlyData[month].revenue +=
+    monthlyData[month]
+      .revenue +=
       order.total;
 
-    monthlyData[month].profit +=
+    monthlyData[month]
+      .profit +=
       order.total * 0.3;
+
   });
 
   const dynamicMonthlyRevenueData =
-    Object.values(monthlyData);
+    Object.values(
+      monthlyData
+    );
+
+  /*
+  ========================================================
+  PROVIDER
+  ========================================================
+  */
 
   return (
     <RestaurantContext.Provider
       value={{
+
         tables,
+
         menuItems,
+
         reservations,
+
         loungeBookings,
+
         orders,
+
         cart,
+
         analytics,
 
         monthlyRevenueData:
@@ -1132,55 +2140,83 @@ export const RestaurantProvider = ({ children }) => {
         customer,
 
         updateTableStatus,
+
         addReservation,
+
         addLoungeBooking,
+
         updateReservationStatus,
 
         addToCart,
+
         removeFromCart,
+
         updateQuantity,
 
-        cartTotal: cart.reduce(
-          (total, item) =>
-            total +
-            (item.price * item.quantity),
-          0
-        ),
+        cartTotal:
+          cart.reduce(
+            (total, item) =>
+              total +
+              item.price *
+                item.quantity,
+            0
+          ),
 
         placeOrder,
 
         loginCustomer,
+
         registerCustomer,
+
         logoutCustomer,
 
         staffUser,
+
         loginStaff,
+
         registerStaff,
+
         logoutStaff,
 
         updateOrderStatus,
+
         fetchBackendData,
 
         authModalOpen,
+
         setAuthModalOpen,
 
         fetchActiveTableOrder,
+
         createTableOrder,
+
         updateTableOrderItems,
+
         settleTableOrder,
 
         changeStaffPassword,
 
-        // Forgot Password
         requestStaffPasswordReset,
+
         verifyStaffResetOtp,
+
         resetStaffPassword
+
       }}
     >
       {children}
     </RestaurantContext.Provider>
   );
+
 };
 
+/*
+=========================================================
+CUSTOM HOOK
+=========================================================
+*/
+
 export const useRestaurant = () =>
-  useContext(RestaurantContext);
+  useContext(
+    RestaurantContext
+  );
