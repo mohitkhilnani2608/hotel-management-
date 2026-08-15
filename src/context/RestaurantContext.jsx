@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { subHours, addDays } from 'date-fns';
 
+const API_BASE_URL = 'https://hotel-management-wai7.onrender.com';
+
 const initialTables = [
   { id: 'T1', number: '1', capacity: 2, status: 'Available', type: 'Window', location: 'Main Dining' },
   { id: 'T2', number: '2', capacity: 2, status: 'Available', type: 'Standard', location: 'Main Dining' },
@@ -879,7 +881,7 @@ export const RestaurantProvider = ({ children }) => {
       email.trim().toLowerCase();
 
     const res = await fetch(
-      'http://localhost:5005/api/staff/forgot-password',
+      `${API_BASE_URL}/api/staff/forgot-password`,
       {
         method: 'POST',
         headers: {
@@ -938,7 +940,7 @@ export const RestaurantProvider = ({ children }) => {
       email.trim().toLowerCase();
 
     const res = await fetch(
-      'http://localhost:5005/api/staff/verify-reset-otp',
+      `${API_BASE_URL}/api/staff/verify-reset-otp`,
       {
         method: 'POST',
         headers: {
@@ -998,7 +1000,7 @@ export const RestaurantProvider = ({ children }) => {
       email.trim().toLowerCase();
 
     const res = await fetch(
-      'http://localhost:5005/api/staff/reset-password',
+      `${API_BASE_URL}/api/staff/reset-password`,
       {
         method: 'PUT',
         headers: {
