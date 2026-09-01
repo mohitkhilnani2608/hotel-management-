@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { Search, Filter, MoreHorizontal } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
+
+const formatDateSafe = (dateStr) => {
+  if (!dateStr) return 'N/A';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return String(dateStr);
+  return format(d, 'MMM dd, yyyy');
+};
 
 export const Reservations = () => {
   const { reservations, tables, updateReservationStatus, loungeBookings } = useRestaurant();
@@ -86,7 +93,7 @@ export const Reservations = () => {
                     <div className="font-medium">{reservation.guestName}</div>
                   </TableCell>
                   <TableCell>{reservation.partySize}</TableCell>
-                  <TableCell>{format(new Date(reservation.date), 'MMM dd, yyyy')}</TableCell>
+                  <TableCell>{formatDateSafe(reservation.date)}</TableCell>
                   <TableCell className="font-medium">{reservation.time}</TableCell>
                   <TableCell>
                     {table ? (
@@ -178,7 +185,7 @@ export const Reservations = () => {
                     <div className="font-medium">{booking.guestName}</div>
                   </TableCell>
                   <TableCell>{booking.guests}</TableCell>
-                  <TableCell>{format(new Date(booking.date), 'MMM dd, yyyy')}</TableCell>
+                  <TableCell>{formatDateSafe(booking.date)}</TableCell>
                   <TableCell className="font-medium">{booking.time}</TableCell>
                   <TableCell className="max-w-xs truncate text-muted-foreground">{booking.eventDetails}</TableCell>
                   <TableCell>{getStatusBadge(booking.status)}</TableCell>

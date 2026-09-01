@@ -1,11 +1,18 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Calendar, Users, Clock, Utensils } from 'lucide-react';
+import { Calendar, Users, Utensils } from 'lucide-react';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Link } from 'react-router-dom';
+
+const formatDateSafe = (dateStr) => {
+  if (!dateStr) return 'N/A';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return String(dateStr);
+  return format(d, 'MMM dd, yyyy');
+};
 
 export const GuestDashboard = () => {
   const { reservations, customer, orders } = useRestaurant();
@@ -27,7 +34,7 @@ export const GuestDashboard = () => {
 
   const userOrders = orders.filter(o => o.customerId === customer.id);
 
-  const ReservationCard = ({ reservation, isPast }) => {
+  const ReservationCard = ({ reservation }) => {
     return (
       <Card className="overflow-hidden p-6 flex flex-col md:flex-row gap-6 items-center shadow-sm hover:shadow-md transition-shadow">
         <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
@@ -48,7 +55,7 @@ export const GuestDashboard = () => {
              <div>
               <span className="block text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Date & Time</span>
               <span className="font-medium flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-primary" /> {format(new Date(reservation.date), 'MMM dd, yyyy')} at {reservation.time}
+                <Calendar className="w-3 h-3 text-primary" /> {formatDateSafe(reservation.date)} at {reservation.time}
               </span>
             </div>
             <div>
@@ -89,7 +96,7 @@ export const GuestDashboard = () => {
              <div>
               <span className="block text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Date</span>
               <span className="font-medium flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-primary" /> {order.createdAt ? format(new Date(order.createdAt), 'MMM dd, yyyy') : 'Today'}
+                <Calendar className="w-3 h-3 text-primary" /> {order.createdAt ? formatDateSafe(order.createdAt) : 'Today'}
               </span>
             </div>
             <div>

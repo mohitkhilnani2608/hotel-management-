@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Notebook, ChefHat, Bell, Search, Utensils, LineChart, Package, LogOut, KeyRound } from 'lucide-react';
+import { LayoutDashboard, Users, Notebook, ChefHat, Bell, Search, LineChart, Package, LogOut, KeyRound } from 'lucide-react';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { useRestaurant } from '../../context/RestaurantContext';

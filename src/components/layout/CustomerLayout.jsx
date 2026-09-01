@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { CustomerAuthModal } from '../auth/CustomerAuthModal';
 import { StaffLoginModal } from '../auth/StaffLoginModal';
@@ -8,7 +8,6 @@ import { useRestaurant } from '../../context/RestaurantContext';
 export const CustomerLayout = () => {
   const { customer, logoutCustomer, authModalOpen, setAuthModalOpen } = useRestaurant();
   const location = useLocation();
-  const navigate = useNavigate();
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
 
   const navLinks = [

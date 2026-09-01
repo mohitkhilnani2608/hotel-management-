@@ -1,8 +1,7 @@
 import React from 'react';
-import { Package, AlertCircle, TrendingUp, ArrowDown } from 'lucide-react';
+import { Package, AlertCircle, TrendingUp } from 'lucide-react';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
 
 const inventoryItems = [
   { id: 1, name: 'A5 Wagyu Beef', category: 'Meat', stock: 12, unit: 'kg', threshold: 15, status: 'Low', lastRestocked: '2023-10-24' },

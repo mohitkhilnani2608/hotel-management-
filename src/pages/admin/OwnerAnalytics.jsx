@@ -1,6 +1,6 @@
 import React from 'react';
 import { AreaChart, Area, BarChart, Bar, Cell, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { DollarSign, TrendingUp, TrendingDown, Users, Utensils, Receipt } from 'lucide-react';
+import { DollarSign, Users, Utensils, Receipt } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { useRestaurant } from '../../context/RestaurantContext';
 

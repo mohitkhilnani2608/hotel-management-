@@ -24,7 +24,7 @@ The ternary automatically selects the correct URL.
 =========================================================
 */
 
-const API_BASE_URL = 'https://hotel-management-wai7.onrender.com';
+const API_BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || '');
 
 /*
 =========================================================
@@ -2063,7 +2063,7 @@ export const RestaurantProvider = ({
     const date =
       new Date(
         order.createdAt ||
-        Date.now()
+        0
       );
 
     const month =

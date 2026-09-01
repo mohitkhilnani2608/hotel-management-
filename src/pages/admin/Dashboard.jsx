@@ -148,7 +148,7 @@ export const Dashboard = () => {
                     </p>
                   </div>
                   <div className="ml-auto font-medium text-sm text-muted-foreground">
-                    ${order.total.toFixed(2)}
+                    ${Number(order.total || 0).toFixed(2)}
                   </div>
                 </div>
               ))}

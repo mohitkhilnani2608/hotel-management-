@@ -173,7 +173,7 @@ export const TableMatrix = () => {
               <Utensils className="h-5 w-5 text-muted-foreground" /> {location}
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-              {tables.filter(t => t.location === location).map(table => (
+              {tables.filter(t => t.location === location).sort((a, b) => (parseInt(a.number, 10) || 0) - (parseInt(b.number, 10) || 0)).map(table => (
                 <button
                   key={table.id}
                   onClick={() => setSelectedTable(table)}
@@ -413,8 +413,8 @@ export const TableMatrix = () => {
                 <span>TABLE: T{selectedTable?.number}</span>
               </div>
               <div className="flex justify-between">
-                <span>DATE: {new Date(activeOrder.createdAt || Date.now()).toLocaleDateString()}</span>
-                <span>TIME: {new Date(activeOrder.createdAt || Date.now()).toLocaleTimeString()}</span>
+                <span>DATE: {new Date(activeOrder.createdAt || 0).toLocaleDateString()}</span>
+                <span>TIME: {new Date(activeOrder.createdAt || 0).toLocaleTimeString()}</span>
               </div>
               <div className="flex justify-between">
                 <span>GUEST: {activeReservation?.guestName || "Walk-in Guest"}</span>
